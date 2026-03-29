@@ -67,23 +67,30 @@ function LabelCard({
 
   if (isLarge) {
     if (fields.bigPrice) {
-      // Layout: left 50% = info column, right 50% = big price block
       return (
         <div
           className="label-card border border-gray-300 bg-white"
           style={{ width: "91mm", height: "62mm", padding: "3mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column" }}
         >
+          {/* Row 1: shop name */}
           {fields.shopName && (
             <div style={{ fontSize: "9pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "1.5mm", marginBottom: "1.5mm", color: "#000", flexShrink: 0 }}>
               {data.shopName}
             </div>
           )}
-          <div style={{ display: "flex", flex: 1, gap: "2mm", minHeight: 0 }}>
-            {/* Left: name, article, date, barcode */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-              {fields.productName && (
-                <div style={{ fontSize: "9pt", fontWeight: 700, lineHeight: 1.2, color: "#000", marginBottom: "1mm" }}>
-                  {data.productName}
+          {/* Row 2: product name full width */}
+          {fields.productName && (
+            <div style={{ fontSize: "9pt", fontWeight: 700, lineHeight: 1.2, color: "#000", marginBottom: "1.5mm", flexShrink: 0 }}>
+              {data.productName}
+            </div>
+          )}
+          {/* Row 3: bottom area — left: barcode+meta, right: big price */}
+          <div style={{ display: "flex", flex: 1, gap: "2mm", minHeight: 0, alignItems: "flex-end" }}>
+            {/* Left column: barcode, then article + date */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 0 }}>
+              {fields.barcode && (
+                <div style={{ marginBottom: "1mm" }}>
+                  <Barcode value={data.barcode} height={22} fontSize={6} />
                 </div>
               )}
               {fields.article && (
@@ -92,19 +99,14 @@ function LabelCard({
               {fields.date && (
                 <div style={{ fontSize: "7pt", color: "#555" }}>{data.date}</div>
               )}
-              {fields.barcode && (
-                <div style={{ marginTop: "auto" }}>
-                  <Barcode value={data.barcode} height={26} fontSize={6} />
-                </div>
-              )}
             </div>
-            {/* Right: big price = ~1/4 of label area */}
+            {/* Right column: huge price + ₽ bottom-right */}
             {fields.price && (
-              <div style={{ width: "42mm", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderLeft: "0.5px solid #ccc", paddingLeft: "2mm", flexShrink: 0 }}>
-                <div style={{ fontSize: "28pt", fontWeight: 900, color: "#000", lineHeight: 1, textAlign: "center" }}>
+              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+                <div style={{ fontSize: "34pt", fontWeight: 900, color: "#000", lineHeight: 1, whiteSpace: "nowrap" }}>
                   {data.price}
                 </div>
-                <div style={{ fontSize: "13pt", fontWeight: 700, color: "#000" }}>₽</div>
+                <div style={{ fontSize: "10pt", fontWeight: 700, color: "#000", marginTop: "0.5mm" }}>₽</div>
               </div>
             )}
           </div>
