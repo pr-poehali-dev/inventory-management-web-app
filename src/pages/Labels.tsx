@@ -84,8 +84,19 @@ export default function Labels() {
   };
 
   const isLarge = size === "large";
-  const perPage = isLarge ? 9 : size === "small20" ? 20 : 24;
   const cols = isLarge ? 3 : 4;
+  // Реальное кол-во на листе: (страница_мм - отступы*2) / (ценник_мм + gap)
+  const pageMmW = isLarge ? 297 : 210;
+  const pageMmH = isLarge ? 210 : 297;
+  const marginMm = 8;
+  const gapMm = 2;
+  const labelMmW = LABEL_SIZES[size].w;
+  const labelMmH = LABEL_SIZES[size].h;
+  const usableW = pageMmW - marginMm * 2;
+  const usableH = pageMmH - marginMm * 2;
+  const colsCalc = Math.floor((usableW + gapMm) / (labelMmW + gapMm));
+  const rowsCalc = Math.floor((usableH + gapMm) / (labelMmH + gapMm));
+  const perPage = isLarge ? 9 : colsCalc * rowsCalc;
   const totalPages = Math.ceil(copies / perPage);
   // Размер листа для предпросмотра
   const pagePreviewW = isLarge ? "297mm" : "210mm";
