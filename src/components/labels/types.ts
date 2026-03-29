@@ -14,6 +14,8 @@ export interface LabelStyle {
   priceScaleX: number;
   priceScaleY: number;
   priceFont: string;
+  thermoFontSize: number;
+  thermoFontWeight: number;
 }
 
 export interface LabelData {

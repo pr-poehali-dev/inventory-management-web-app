@@ -173,18 +173,20 @@ export default function LabelCard({
     const barcodeH = Math.round(ts.h * 0.30 * 3.78);
     // Шрифт значения штрихкода: крупный и чёткий
     const barcodeFontSize = isNarrow ? 7 : 9;
+    const tFontSize = `${labelStyle.thermoFontSize ?? 6}pt`;
+    const tFontWeight = labelStyle.thermoFontWeight ?? 700;
     return (
       <div
         className="label-card bg-white"
         style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid #ccc", borderRadius: "2mm" }}
       >
         {fields.shopName && (
-          <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.3mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
+          <div style={{ fontSize: tFontSize, fontWeight: tFontWeight, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.3mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
             {data.shopName}
           </div>
         )}
         {fields.productName && (
-          <div style={{ fontSize: isNarrow ? "5pt" : "6pt", fontWeight: 700, lineHeight: 1.1, color: "#000", marginBottom: "0.5mm", flexShrink: 0, overflow: "hidden" }}>
+          <div style={{ fontSize: tFontSize, fontWeight: tFontWeight, lineHeight: 1.1, color: "#000", marginBottom: "0.5mm", flexShrink: 0, overflow: "hidden" }}>
             {data.productName}
           </div>
         )}
@@ -195,13 +197,13 @@ export default function LabelCard({
                 <Barcode value={data.barcode} height={barcodeH} fontSize={barcodeFontSize} />
               </div>
             )}
-            {fields.article && <div style={{ fontSize: "4.5pt", color: "#333", marginTop: "0.3mm" }}>Арт: {data.article}</div>}
-            {fields.date && <div style={{ fontSize: "4.5pt", color: "#333" }}>{data.date}</div>}
+            {fields.article && <div style={{ fontSize: tFontSize, fontWeight: tFontWeight, color: "#333", marginTop: "0.3mm" }}>Арт: {data.article}</div>}
+            {fields.date && <div style={{ fontSize: tFontSize, fontWeight: tFontWeight, color: "#333" }}>{data.date}</div>}
           </div>
           {fields.price && (
             <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-              <div style={{ fontSize: isNarrow ? "9pt" : "12pt", fontWeight: 900, color: "#000", lineHeight: 1 }}>
-                {data.price} <span style={{ fontSize: isNarrow ? "5pt" : "6pt" }}>₽</span>
+              <div style={{ fontSize: `calc(${tFontSize} * 1.8)`, fontWeight: tFontWeight, color: "#000", lineHeight: 1 }}>
+                {data.price} <span style={{ fontSize: tFontSize }}>₽</span>
               </div>
             </div>
           )}

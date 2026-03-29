@@ -58,6 +58,8 @@ export default function Labels() {
     priceScaleX: 1.0,
     priceScaleY: 1.0,
     priceFont: "'Barlow Condensed', Arial Narrow, sans-serif",
+    thermoFontSize: 6,
+    thermoFontWeight: 700,
   });
 
   // Сохраняем при каждом изменении
@@ -167,32 +169,35 @@ export default function Labels() {
 
         <div className="flex-1 min-w-0 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted border border-border">
-              <button
-                onClick={() => setPreviewMode("single")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
-                style={{
-                  background: previewMode === "single" ? "hsl(var(--background))" : "transparent",
-                  color: previewMode === "single" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                  boxShadow: previewMode === "single" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
-                }}
-              >
-                <Icon name="ScanBarcode" size={14} />
-                {isThermo ? "Этикетка" : "Ценник"}
-              </button>
-              <button
-                onClick={() => setPreviewMode("sheet")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
-                style={{
-                  background: previewMode === "sheet" ? "hsl(var(--background))" : "transparent",
-                  color: previewMode === "sheet" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                  boxShadow: previewMode === "sheet" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
-                }}
-              >
-                <Icon name={isThermo ? "AlignJustify" : "LayoutGrid"} size={14} />
-                {isThermo ? "Лента" : "На листе"}
-              </button>
-            </div>
+            {!isThermo && (
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-muted border border-border">
+                <button
+                  onClick={() => setPreviewMode("single")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                  style={{
+                    background: previewMode === "single" ? "hsl(var(--background))" : "transparent",
+                    color: previewMode === "single" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                    boxShadow: previewMode === "single" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                  }}
+                >
+                  <Icon name="ScanBarcode" size={14} />
+                  Ценник
+                </button>
+                <button
+                  onClick={() => setPreviewMode("sheet")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                  style={{
+                    background: previewMode === "sheet" ? "hsl(var(--background))" : "transparent",
+                    color: previewMode === "sheet" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                    boxShadow: previewMode === "sheet" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                  }}
+                >
+                  <Icon name="LayoutGrid" size={14} />
+                  На листе
+                </button>
+              </div>
+            )}
+            {isThermo && <div />}
             <div className="text-xs text-muted-foreground">
               {isThermo
                 ? `${labelMm.w}×${labelMm.h} мм · ${copies} шт.`
@@ -205,16 +210,14 @@ export default function Labels() {
           <div
             ref={previewRef}
             className={`flex-1 rounded-lg border border-border ${
-              previewMode === "single"
+              previewMode === "single" || isThermo
                 ? "overflow-hidden flex items-center justify-center"
-                : isThermo
-                  ? "overflow-hidden flex justify-center"
-                  : "overflow-auto scrollbar-thin flex flex-col items-center"
+                : "overflow-auto scrollbar-thin flex flex-col items-center"
             }`}
             style={{ background: "hsl(220 14% 12%)" }}
           >
-            {previewMode === "single" ? (
-              /* Один ценник в реальных пропорциях */
+            {previewMode === "single" || isThermo ? (
+              /* Один ценник / этикетка */
               <div style={{
                 transform: `scale(${singleScale})`,
                 transformOrigin: "center center",
@@ -223,30 +226,6 @@ export default function Labels() {
                 flexShrink: 0,
               }}>
                 <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
-              </div>
-            ) : isThermo ? (
-              /* Термо: вертикальная лента этикеток */
-              <div
-                className="flex flex-col items-center overflow-y-auto overflow-x-hidden scrollbar-thin w-full"
-                style={{ padding: "24px 32px", gap: `${Math.round(singleScale * 8)}px` }}
-              >
-                {Array.from({ length: copies }).map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      transform: `scale(${singleScale})`,
-                      transformOrigin: "top center",
-                      width: `${labelPxW}px`,
-                      height: `${labelPxH}px`,
-                      flexShrink: 0,
-                      boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-                      marginBottom: `-${labelPxH * (1 - singleScale)}px`,
-                    }}
-                  >
-                    <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
-                  </div>
-                ))}
-                <div style={{ height: "24px", flexShrink: 0 }} />
               </div>
             ) : (
               <div className="flex flex-col items-center" style={{ gap: `${pagePxH * sheetScale + 16}px`, paddingTop: "24px", paddingBottom: "24px" }}>
