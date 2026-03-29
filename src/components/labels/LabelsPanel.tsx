@@ -1,0 +1,157 @@
+import Icon from "@/components/ui/icon";
+import type { LabelData, LabelFields, LabelSize } from "./types";
+
+const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
+  { id: "large", label: "Большой", sub: "9 на листе А4" },
+  { id: "small20", label: "Маленький 20", sub: "20 на листе А4" },
+  { id: "small30", label: "Маленький 30", sub: "30 на листе А4" },
+];
+
+const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean }[] = [
+  { key: "shopName", label: "Название магазина" },
+  { key: "productName", label: "Название товара" },
+  { key: "date", label: "Дата" },
+  { key: "article", label: "Артикул поставщика" },
+  { key: "price", label: "Цена" },
+  { key: "barcode", label: "Штрихкод" },
+  { key: "bigPrice", label: "Крупная цена (1/4 ценника)", onlyLarge: true },
+];
+
+export default function LabelsPanel({
+  size,
+  setSize,
+  copies,
+  setCopies,
+  fields,
+  toggleField,
+  data,
+  setData,
+  onPrint,
+}: {
+  size: LabelSize;
+  setSize: (s: LabelSize) => void;
+  copies: number;
+  setCopies: (n: number) => void;
+  fields: LabelFields;
+  toggleField: (key: keyof LabelFields) => void;
+  data: LabelData;
+  setData: (fn: (d: LabelData) => LabelData) => void;
+  onPrint: () => void;
+}) {
+  const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
+
+  return (
+    <div className="w-72 flex-shrink-0 flex flex-col gap-4 overflow-y-auto scrollbar-thin pb-4">
+
+      {/* Size selector */}
+      <div className="stat-card space-y-2">
+        <div className="section-title mb-3">Размер ценника</div>
+        {sizeOptions.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => setSize(opt.id)}
+            className="w-full text-left px-3 py-2.5 rounded-lg border transition-all"
+            style={{
+              background: size === opt.id ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--muted))",
+              borderColor: size === opt.id ? "hsl(var(--wms-blue) / 0.5)" : "hsl(var(--border))",
+            }}
+          >
+            <div className="text-sm font-medium text-foreground">{opt.label}</div>
+            <div className="text-xs text-muted-foreground">{opt.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Fields toggle */}
+      <div className="stat-card space-y-2">
+        <div className="section-title mb-3">Поля ценника</div>
+        {fieldLabels
+          .filter(({ onlyLarge }) => !onlyLarge || size === "large")
+          .map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => toggleField(key)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-muted"
+            >
+              <span className="text-sm text-foreground">{label}</span>
+              <div
+                className="w-9 h-5 rounded-full relative transition-colors flex-shrink-0"
+                style={{ background: fields[key] ? "hsl(var(--primary))" : "hsl(var(--border))" }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"
+                  style={{ left: fields[key] ? "calc(100% - 18px)" : "2px" }}
+                />
+              </div>
+            </button>
+          ))}
+      </div>
+
+      {/* Data editor */}
+      <div className="stat-card space-y-3">
+        <div className="section-title mb-1">Данные</div>
+        {(
+          [
+            { key: "shopName", label: "Магазин", show: fields.shopName },
+            { key: "productName", label: "Товар", show: fields.productName },
+            { key: "date", label: "Дата", show: fields.date },
+            { key: "article", label: "Артикул", show: fields.article },
+            { key: "price", label: "Цена", show: fields.price },
+            { key: "barcode", label: "Штрихкод", show: fields.barcode },
+          ] as { key: keyof LabelData; label: string; show: boolean }[]
+        )
+          .filter((f) => f.show)
+          .map((f) => (
+            <div key={f.key}>
+              <label className="text-xs text-muted-foreground block mb-1">{f.label}</label>
+              <input
+                value={data[f.key]}
+                onChange={(e) => setData((d) => ({ ...d, [f.key]: e.target.value }))}
+                className="w-full bg-muted border border-border rounded-md text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          ))}
+      </div>
+
+      {/* Copies */}
+      <div className="stat-card">
+        <div className="section-title mb-3">Количество</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCopies(Math.max(1, copies - 1))}
+            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Icon name="Minus" size={14} />
+          </button>
+          <input
+            type="number"
+            min={1}
+            max={300}
+            value={copies}
+            onChange={(e) => setCopies(Math.max(1, Math.min(300, Number(e.target.value))))}
+            className="flex-1 text-center bg-muted border border-border rounded-md text-sm py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary mono font-bold"
+          />
+          <button
+            onClick={() => setCopies(Math.min(300, copies + 1))}
+            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Icon name="Plus" size={14} />
+          </button>
+        </div>
+        <div className="text-xs text-muted-foreground mt-2 text-center">
+          {Math.ceil(copies / perPage)} лист(а) А4
+        </div>
+      </div>
+
+      {/* Print button */}
+      <button
+        onClick={onPrint}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
+        style={{ background: "hsl(var(--primary))", color: "#fff" }}
+      >
+        <Icon name="Printer" size={17} />
+        Печать / PDF
+      </button>
+    </div>
+  );
+}
