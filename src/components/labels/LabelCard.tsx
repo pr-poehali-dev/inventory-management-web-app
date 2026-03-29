@@ -75,9 +75,9 @@ export default function LabelCard({
             </div>
             {fields.price && (
               <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-                <svg width="44mm" height="28mm" viewBox="0 0 166 106" preserveAspectRatio="none" style={{ display: "block" }}>
+                <svg width="44mm" height="28mm" viewBox="0 0 300 106" preserveAspectRatio="xMaxYMax meet" style={{ display: "block", overflow: "visible" }}>
                   <text
-                    x="166"
+                    x="300"
                     y="100"
                     textAnchor="end"
                     fontFamily="Arial, sans-serif"
