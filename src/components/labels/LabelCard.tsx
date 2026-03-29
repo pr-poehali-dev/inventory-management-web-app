@@ -78,8 +78,8 @@ function WordSpans({
   editable: boolean;
   onWordClick: (key: string, e: React.MouseEvent) => void;
 }) {
-  // Разбиваем с учётом \n как отдельного токена
-  const tokens = text.split(/(\s+|\n)/);
+  // Разбиваем: сначала \n (отдельный токен), потом пробелы (без \n)
+  const tokens = text.split(/(\n|[^\S\n]+)/);
   let wordIdx = 0;
   return (
     <>
@@ -113,7 +113,7 @@ function WordSpans({
 // Применяет операцию к тексту: удалить слово, вставить пробел или перенос ПОСЛЕ него
 function applyTextOp(text: string, wordIdx: number, op: "delete" | "space" | "newline"): string {
   // Тот же сплит что в WordSpans — чтобы индексы совпадали
-  const tokens = text.split(/(\s+|\n)/).filter((t) => t !== "");
+  const tokens = text.split(/(\n|[^\S\n]+)/).filter((t) => t !== "");
   // Находим реальные слова (не пробелы и не \n)
   const wordPositions: number[] = [];
   tokens.forEach((t, i) => {
