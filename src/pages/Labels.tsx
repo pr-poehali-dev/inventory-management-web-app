@@ -133,11 +133,14 @@ export default function Labels() {
   const labelMm = LABEL_SIZES[size];
   const labelPxW = labelMm.w * PX_PER_MM;
   const labelPxH = labelMm.h * PX_PER_MM;
-  const singleScale = Math.min(
-    (containerSize.w - 80) / labelPxW,
-    (containerSize.h - 80) / labelPxH,
-    2.5
-  );
+  // Для термо-ленты масштабируем только по высоте (лента горизонтальная)
+  const singleScale = isThermo && previewMode === "sheet"
+    ? Math.min((containerSize.h - 80) / labelPxH, 3)
+    : Math.min(
+        (containerSize.w - 80) / labelPxW,
+        (containerSize.h - 80) / labelPxH,
+        2.5
+      );
 
   return (
     <>
@@ -190,14 +193,22 @@ export default function Labels() {
             </div>
             <div className="text-xs text-muted-foreground">
               {previewMode === "sheet"
-                ? `${copies} шт. · ${totalPages} стр.`
+                ? isThermo
+                  ? `${copies} шт. · термолента`
+                  : `${copies} шт. · ${totalPages} стр.`
                 : `${labelMm.w}×${labelMm.h} мм`}
             </div>
           </div>
 
           <div
             ref={previewRef}
-            className={`flex-1 rounded-lg border border-border ${previewMode === "single" ? "overflow-hidden flex items-center justify-center" : "overflow-auto scrollbar-thin flex flex-col items-center"}`}
+            className={`flex-1 rounded-lg border border-border ${
+              previewMode === "single"
+                ? "overflow-hidden flex items-center justify-center"
+                : isThermo
+                  ? "overflow-hidden flex items-center"
+                  : "overflow-auto scrollbar-thin flex flex-col items-center"
+            }`}
             style={{ background: "hsl(220 14% 12%)" }}
           >
             {previewMode === "single" ? (
@@ -210,6 +221,30 @@ export default function Labels() {
                 flexShrink: 0,
               }}>
                 <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
+              </div>
+            ) : isThermo ? (
+              /* Термо: горизонтальная лента этикеток */
+              <div
+                className="flex items-center overflow-x-auto overflow-y-hidden scrollbar-thin h-full w-full"
+                style={{ padding: "24px 32px", gap: `${Math.round(singleScale * 12)}px` }}
+              >
+                {Array.from({ length: copies }).map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      transform: `scale(${singleScale})`,
+                      transformOrigin: "center center",
+                      width: `${labelPxW}px`,
+                      height: `${labelPxH}px`,
+                      flexShrink: 0,
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+                      marginLeft: `-${labelPxW * (1 - singleScale) / 2}px`,
+                      marginRight: `-${labelPxW * (1 - singleScale) / 2}px`,
+                    }}
+                  >
+                    <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="flex flex-col items-center" style={{ gap: `${pagePxH * sheetScale + 16}px`, paddingTop: "24px", paddingBottom: "24px" }}>
