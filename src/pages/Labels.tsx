@@ -20,11 +20,13 @@ function saveSettings(data: object) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_) { /* ignore */ }
 }
 
-// Реальные размеры ценников в мм (small — ширина ячейки на книжном А4: (194−6)/cols)
-const LABEL_SIZES: Record<LabelSize, { w: number; h: number }> = {
-  large:   { w: 91, h: 62 },
-  small20: { w: 50, h: 35 },
-  small30: { w: 50, h: 35 },
+// Размеры ценников в мм
+const LABEL_SIZES: Record<LabelSize, { w: number; h: number; thermo?: boolean }> = {
+  large:        { w: 91,  h: 62 },
+  small:        { w: 50,  h: 35 },
+  thermo58x40:  { w: 58,  h: 40,  thermo: true },
+  thermo58x30:  { w: 58,  h: 30,  thermo: true },
+  thermo40x25:  { w: 40,  h: 25,  thermo: true },
 };
 
 export default function Labels() {
@@ -84,25 +86,25 @@ export default function Labels() {
   };
 
   const isLarge = size === "large";
-  const cols = isLarge ? 3 : 4;
-  // Реальное кол-во на листе: (страница_мм - отступы*2) / (ценник_мм + gap)
-  const pageMmW = isLarge ? 297 : 210;
-  const pageMmH = isLarge ? 210 : 297;
-  const marginMm = 3;
-  const gapMm = 1;
+  const isThermo = !!LABEL_SIZES[size].thermo;
   const labelMmW = LABEL_SIZES[size].w;
   const labelMmH = LABEL_SIZES[size].h;
+
+  // Термопринтер: страница = размер этикетки, 1 шт на страницу
+  // А4: считаем сколько влезает с минимальными отступами
+  const pageMmW = isThermo ? labelMmW : (isLarge ? 297 : 210);
+  const pageMmH = isThermo ? labelMmH : (isLarge ? 210 : 297);
+  const marginMm = isThermo ? 0 : 3;
+  const gapMm = isThermo ? 0 : 1;
+  const cols = isThermo ? 1 : (isLarge ? 3 : 4);
   const usableW = pageMmW - marginMm * 2;
   const usableH = pageMmH - marginMm * 2;
-  const colsCalc = Math.floor((usableW + gapMm) / (labelMmW + gapMm));
-  const rowsCalc = Math.floor((usableH + gapMm) / (labelMmH + gapMm));
+  const colsCalc = isThermo ? 1 : Math.floor((usableW + gapMm) / (labelMmW + gapMm));
+  const rowsCalc = isThermo ? 1 : Math.floor((usableH + gapMm) / (labelMmH + gapMm));
   const perPage = isLarge ? 9 : colsCalc * rowsCalc;
   const totalPages = Math.ceil(copies / perPage);
-  // Размер листа для предпросмотра
-  const pagePreviewW = isLarge ? "297mm" : "210mm";
-  const pagePreviewH = isLarge ? "210mm" : "297mm";
-  const pagePxW = isLarge ? 297 * 3.7795 : 210 * 3.7795;
-  const pagePxH = isLarge ? 210 * 3.7795 : 297 * 3.7795;
+  const pagePxW = pageMmW * 3.7795;
+  const pagePxH = pageMmH * 3.7795;
 
   // Ref на контейнер предпросмотра для динамического масштаба
   const previewRef = useRef<HTMLDivElement>(null);

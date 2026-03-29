@@ -74,7 +74,12 @@ export default function LabelCard({
   labelStyle: LabelStyle;
 }) {
   const isLarge = size === "large";
-  const is30 = size === "small30";
+  const isThermo = size.startsWith("thermo");
+  const thermoSizes: Record<string, { w: number; h: number }> = {
+    thermo58x40: { w: 58, h: 40 },
+    thermo58x30: { w: 58, h: 30 },
+    thermo40x25: { w: 40, h: 25 },
+  };
 
   if (isLarge) {
     if (fields.bigPrice) {
@@ -157,9 +162,53 @@ export default function LabelCard({
     );
   }
 
+  // Thermo variant — точный размер этикетки, без рамки
+  if (isThermo) {
+    const ts = thermoSizes[size] ?? { w: 58, h: 40 };
+    const tw = `${ts.w}mm`;
+    const th = `${ts.h}mm`;
+    const isNarrow = ts.h <= 30;
+    const tp = isNarrow ? "1mm" : "1.5mm";
+    return (
+      <div
+        className="label-card bg-white"
+        style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "none" }}
+      >
+        {fields.shopName && (
+          <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #000", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
+            {data.shopName}
+          </div>
+        )}
+        {fields.productName && (
+          <div style={{ fontSize: isNarrow ? "5pt" : "6pt", fontWeight: 700, lineHeight: 1.1, color: "#000", marginBottom: "0.5mm", flexShrink: 0, overflow: "hidden" }}>
+            {data.productName}
+          </div>
+        )}
+        <div style={{ display: "flex", flex: 1, gap: "1mm", minHeight: 0, alignItems: "flex-end" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 0 }}>
+            {fields.barcode && (
+              <div style={{ marginBottom: "0.5mm" }}>
+                <Barcode value={data.barcode} height={isNarrow ? 10 : 14} fontSize={4} />
+              </div>
+            )}
+            {fields.article && <div style={{ fontSize: "4.5pt", color: "#333" }}>Арт: {data.article}</div>}
+            {fields.date && <div style={{ fontSize: "4.5pt", color: "#333" }}>{data.date}</div>}
+          </div>
+          {fields.price && (
+            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+              <div style={{ fontSize: isNarrow ? "9pt" : "12pt", fontWeight: 900, color: "#000", lineHeight: 1 }}>
+                {data.price} <span style={{ fontSize: isNarrow ? "5pt" : "6pt" }}>₽</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Small variants — ширина 100% (растягивается по ячейке сетки), высота фиксирована
   const w = "100%";
-  const h = is30 ? "35mm" : "46mm";
+  const h = "35mm";
   const p = "1.5mm";
 
   if (fields.bigPrice) {

@@ -2,9 +2,11 @@ import Icon from "@/components/ui/icon";
 import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
 
 const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
-  { id: "large", label: "Большой", sub: "9 на листе А4" },
-  { id: "small20", label: "Маленький 20", sub: "мелкий, высокий" },
-  { id: "small30", label: "Маленький 30", sub: "мелкий, широкий" },
+  { id: "large",       label: "Большой 91×62 мм",   sub: "9 шт на листе А4" },
+  { id: "small",       label: "Маленький 50×35 мм",  sub: "32 шт на листе А4" },
+  { id: "thermo58x40", label: "Термо 58×40 мм",      sub: "термопринтер" },
+  { id: "thermo58x30", label: "Термо 58×30 мм",      sub: "термопринтер" },
+  { id: "thermo40x25", label: "Термо 40×25 мм",      sub: "термопринтер" },
 ];
 
 const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean }[] = [
@@ -78,7 +80,8 @@ export default function LabelsPanel({
   setLabelStyle: (fn: (s: LabelStyle) => LabelStyle) => void;
   onPrint: () => void;
 }) {
-  const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
+  const isThermo = size.startsWith("thermo");
+  const perPage = size === "large" ? 9 : isThermo ? 1 : 32;
 
   return (
     <div className="w-72 flex-shrink-0 flex flex-col gap-4 overflow-y-auto scrollbar-thin pb-4">
