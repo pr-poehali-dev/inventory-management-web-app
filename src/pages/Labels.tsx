@@ -184,7 +184,7 @@ export default function Labels() {
 
           <div
             ref={previewRef}
-            className="flex-1 overflow-hidden scrollbar-thin rounded-lg border border-border flex items-center justify-center"
+            className={`flex-1 rounded-lg border border-border ${previewMode === "single" ? "overflow-hidden flex items-center justify-center" : "overflow-auto scrollbar-thin flex flex-col items-center"}`}
             style={{ background: "hsl(220 14% 12%)" }}
           >
             {previewMode === "single" ? (
