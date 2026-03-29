@@ -173,8 +173,8 @@ function PrintSheet({
             key={pi}
             className="print-page"
             style={{
-              width: "210mm",
-              minHeight: "297mm",
+              width: "297mm",
+              minHeight: "210mm",
               background: "#fff",
               margin: "0 auto",
               padding: "8mm",
@@ -228,7 +228,7 @@ export default function Labels() {
       @media print {
         body > * { display: none !important; }
         #print-portal { display: block !important; }
-        @page { size: A4; margin: 0; }
+        @page { size: A4 landscape; margin: 0; }
       }
     `;
     document.head.appendChild(style);
@@ -407,8 +407,8 @@ export default function Labels() {
                   <div
                     key={pi}
                     style={{
-                      width: "210mm",
-                      minHeight: "297mm",
+                      width: "297mm",
+                      minHeight: "210mm",
                       background: "#fff",
                       padding: "8mm",
                       boxSizing: "border-box",
@@ -417,9 +417,9 @@ export default function Labels() {
                       gridTemplateColumns: `repeat(${cols}, 1fr)`,
                       gap: "2mm",
                       alignContent: "start",
-                      transform: "scale(0.6)",
+                      transform: "scale(0.55)",
                       transformOrigin: "top center",
-                      marginBottom: "-120mm",
+                      marginBottom: "-95mm",
                     }}
                   >
                     {Array.from({ length: count }).map((_, i) => (
@@ -442,7 +442,7 @@ export default function Labels() {
           #print-portal { display: block !important; position: static !important; }
           .print-page { page-break-after: always; }
           .print-page:last-child { page-break-after: auto; }
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 landscape; margin: 0; }
         }
       `}</style>
     </>
