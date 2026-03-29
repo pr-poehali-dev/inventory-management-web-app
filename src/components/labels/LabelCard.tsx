@@ -78,12 +78,15 @@ function WordSpans({
   editable: boolean;
   onWordClick: (key: string, e: React.MouseEvent) => void;
 }) {
-  const tokens = text.split(/(\s+)/);
+  // Разбиваем с учётом \n как отдельного токена
+  const tokens = text.split(/(\s+|\n)/);
   let wordIdx = 0;
   return (
     <>
       {tokens.map((token, i) => {
+        if (token === "\n") return <br key={i} />;
         if (/^\s+$/.test(token)) return <span key={i}>{token}</span>;
+        if (token === "") return null;
         const key = `${fieldKey}:${wordIdx++}`;
         const ws = words[key];
         const isSelected = selected.has(key);
@@ -107,9 +110,32 @@ function WordSpans({
   );
 }
 
+// Применяет операцию к тексту: удалить токен, вставить пробел или перенос после
+function applyTextOp(text: string, wordIdx: number, op: "delete" | "space" | "newline"): string {
+  const tokens = text.split(/(\s+)/);
+  // собираем только «слова» с их позициями в tokens[]
+  const wordPositions: number[] = [];
+  tokens.forEach((t, i) => { if (!/^\s+$/.test(t)) wordPositions.push(i); });
+  const tokIdx = wordPositions[wordIdx];
+  if (tokIdx === undefined) return text;
+  const next = [...tokens];
+  if (op === "delete") {
+    // удаляем слово и соседний пробел
+    next.splice(tokIdx, 1);
+    // убираем лишний разделитель рядом
+    if (next[tokIdx] && /^\s+$/.test(next[tokIdx])) next.splice(tokIdx, 1);
+    else if (tokIdx > 0 && /^\s+$/.test(next[tokIdx - 1])) next.splice(tokIdx - 1, 1);
+  } else if (op === "space") {
+    next.splice(tokIdx + 1, 0, "  ");
+  } else if (op === "newline") {
+    next.splice(tokIdx + 1, 0, "\n");
+  }
+  return next.join("");
+}
+
 function ThermoCard({
   tw, th, tp, data, fields, barcodeH, barcodeFontSize,
-  defaultFs, defaultFw, words, editable, onWordStyle,
+  defaultFs, defaultFw, words, editable, onWordStyle, onDataChange,
 }: {
   tw: string; th: string; tp: string;
   data: LabelData; fields: LabelFields;
@@ -118,6 +144,7 @@ function ThermoCard({
   words: Record<string, ThermoWordStyle>;
   editable: boolean;
   onWordStyle?: (wordKey: string, style: ThermoWordStyle) => void;
+  onDataChange?: (field: ThermoFieldKey, value: string) => void;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -130,7 +157,6 @@ function ThermoCard({
     });
   };
 
-  // Текущие стили выделенных слов (берём из первого выделенного)
   const firstKey = selected.size > 0 ? [...selected][0] : null;
   const selFs = firstKey ? (words[firstKey]?.fontSize ?? defaultFs) : defaultFs;
   const selFw = firstKey ? (words[firstKey]?.fontWeight ?? defaultFw) : defaultFw;
@@ -139,11 +165,35 @@ function ThermoCard({
     selected.forEach((k) => onWordStyle?.(k, { ...(words[k] ?? {}), ...patch }));
   };
 
+  // Применяет текстовую операцию к полю по ключу слова "field:idx"
+  const applyOp = (op: "delete" | "space" | "newline") => {
+    const keys = [...selected];
+    // сортируем по убыванию индекса чтобы удаление не смещало позиции
+    keys.sort((a, b) => {
+      const ai = parseInt(a.split(":")[1]); 
+      const bi = parseInt(b.split(":")[1]);
+      return op === "delete" ? bi - ai : ai - bi;
+    });
+    keys.forEach((k) => {
+      const [field, idxStr] = k.split(":");
+      const fieldKey = field as ThermoFieldKey;
+      const idx = parseInt(idxStr);
+      const text = data[fieldKey];
+      onDataChange?.(fieldKey, applyTextOp(text, idx, op));
+    });
+    setSelected(new Set());
+  };
+
+  const sep = () => <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />;
+  const btn = (label: string, onClick: () => void, color = "#94a3b8", bg = "none") => (
+    <button onClick={onClick} style={{ color, background: bg, border: "none", cursor: "pointer", fontSize: "11px", padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4 }}>{label}</button>
+  );
+
   const baseStyle = (color = "#000"): React.CSSProperties => ({
     fontSize: `${defaultFs}pt`,
     fontWeight: defaultFw,
     color,
-    lineHeight: 1.2,
+    lineHeight: 1.3,
   });
 
   return (
@@ -163,25 +213,22 @@ function ThermoCard({
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
           }}
         >
-          <button onClick={() => applyToSelected({ fontSize: Math.max(4, selFs - 0.5) })}
-            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "13px", padding: "2px 4px", lineHeight: 1 }}>−</button>
+          {btn("−", () => applyToSelected({ fontSize: Math.max(4, selFs - 0.5) }))}
           <span style={{ color: "#f1f5f9", fontSize: "11px", minWidth: "30px", textAlign: "center" }}>{selFs}pt</span>
-          <button onClick={() => applyToSelected({ fontSize: Math.min(20, selFs + 0.5) })}
-            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "13px", padding: "2px 4px", lineHeight: 1 }}>+</button>
-          <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />
+          {btn("+", () => applyToSelected({ fontSize: Math.min(20, selFs + 0.5) }))}
+          {sep()}
           {([400, 700, 900] as number[]).map((w) => (
             <button key={w} onClick={() => applyToSelected({ fontWeight: w })}
               style={{
-                color: selFw === w ? "#fff" : "#94a3b8",
-                background: selFw === w ? "#2563eb" : "none",
-                border: "none", cursor: "pointer", fontSize: "11px",
-                fontWeight: w, padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4,
+                color: selFw === w ? "#fff" : "#94a3b8", background: selFw === w ? "#2563eb" : "none",
+                border: "none", cursor: "pointer", fontSize: "11px", fontWeight: w, padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4,
               }}
             >{w === 400 ? "N" : w === 700 ? "B" : "X"}</button>
           ))}
-          <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />
-          <button onClick={() => { selected.forEach((k) => onWordStyle?.(k, {})); setSelected(new Set()); }}
-            style={{ color: "#f87171", background: "none", border: "none", cursor: "pointer", fontSize: "10px", padding: "2px 4px", lineHeight: 1 }}>✕</button>
+          {sep()}
+          {btn("_", () => applyOp("space"), "#94a3b8")}
+          {btn("↵", () => applyOp("newline"), "#94a3b8")}
+          {btn("del", () => applyOp("delete"), "#f87171")}
         </div>
       )}
 
@@ -232,12 +279,14 @@ export default function LabelCard({
   size,
   labelStyle,
   onThermoWordStyle,
+  onThermoDataChange,
 }: {
   data: LabelData;
   fields: LabelFields;
   size: LabelSize;
   labelStyle: LabelStyle;
   onThermoWordStyle?: (wordKey: string, style: ThermoWordStyle) => void;
+  onThermoDataChange?: (field: keyof Omit<LabelData, 'barcode'>, value: string) => void;
 }) {
   const isLarge = size === "large";
   const isThermo = size.startsWith("thermo");
@@ -348,8 +397,9 @@ export default function LabelCard({
         barcodeH={barcodeH} barcodeFontSize={barcodeFontSize}
         defaultFs={defaultFs} defaultFw={defaultFw}
         words={words}
-        editable={!!onThermoWordStyle}
+        editable={!!onThermoWordStyle || !!onThermoDataChange}
         onWordStyle={onThermoWordStyle}
+        onDataChange={onThermoDataChange}
       />
     );
   }

@@ -238,6 +238,9 @@ export default function Labels() {
                       thermoWords: { ...(s.thermoWords ?? {}), [wordKey]: style },
                     }));
                   } : undefined}
+                  onThermoDataChange={isThermo ? (field, value) => {
+                    setData((d) => ({ ...d, [field]: value }));
+                  } : undefined}
                 />
               </div>
             ) : (
