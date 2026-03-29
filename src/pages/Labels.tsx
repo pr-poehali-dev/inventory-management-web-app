@@ -5,9 +5,12 @@ import PrintSheet from "@/components/labels/PrintSheet";
 import LabelsPanel from "@/components/labels/LabelsPanel";
 import type { LabelData, LabelFields, LabelSize, LabelStyle } from "@/components/labels/types";
 
+type PreviewMode = "single" | "sheet";
+
 export default function Labels() {
   const [size, setSize] = useState<LabelSize>("large");
   const [copies, setCopies] = useState(9);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [fields, setFields] = useState<LabelFields>({
     shopName: true,
     productName: true,
@@ -86,55 +89,86 @@ export default function Labels() {
 
         {/* ── Right: Preview ── */}
         <div className="flex-1 min-w-0 flex flex-col gap-3">
+
+          {/* Header with tab switcher */}
           <div className="flex items-center justify-between">
-            <div className="section-title">
-              Предпросмотр
-              <span className="text-muted-foreground font-normal text-sm ml-2">
-                ({copies} шт. · {totalPages} стр.)
-              </span>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted border border-border">
+              <button
+                onClick={() => setPreviewMode("single")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                style={{
+                  background: previewMode === "single" ? "hsl(var(--background))" : "transparent",
+                  color: previewMode === "single" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                  boxShadow: previewMode === "single" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                }}
+              >
+                <Icon name="ScanBarcode" size={14} />
+                Ценник
+              </button>
+              <button
+                onClick={() => setPreviewMode("sheet")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all"
+                style={{
+                  background: previewMode === "sheet" ? "hsl(var(--background))" : "transparent",
+                  color: previewMode === "sheet" ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                  boxShadow: previewMode === "sheet" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                }}
+              >
+                <Icon name="LayoutGrid" size={14} />
+                На листе
+              </button>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Icon name="Info" size={13} />
-              Реальный размер при печати
+            <div className="text-xs text-muted-foreground">
+              {previewMode === "sheet"
+                ? `${copies} шт. · ${totalPages} стр.`
+                : "Реальный размер при печати"}
             </div>
           </div>
 
-          {/* Sheet preview — scaled */}
+          {/* Preview area */}
           <div
-            className="flex-1 overflow-auto scrollbar-thin rounded-lg border border-border"
+            className="flex-1 overflow-auto scrollbar-thin rounded-lg border border-border flex items-center justify-center"
             style={{ background: "hsl(220 14% 12%)" }}
           >
-            <div className="p-6 flex flex-col items-center gap-4">
-              {Array.from({ length: totalPages }).map((_, pi) => {
-                const start = pi * perPage;
-                const count = Math.min(perPage, copies - start);
-                return (
-                  <div
-                    key={pi}
-                    style={{
-                      width: "297mm",
-                      minHeight: "210mm",
-                      background: "#fff",
-                      padding: "8mm",
-                      boxSizing: "border-box",
-                      boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-                      display: "grid",
-                      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                      gap: "2mm",
-                      alignContent: "start",
-                      transform: "scale(0.55)",
-                      transformOrigin: "top center",
-                      marginBottom: "-95mm",
-                    }}
-                  >
-                    {Array.from({ length: count }).map((_, i) => (
-                      <LabelCard key={i} data={data} fields={fields} size={size} labelStyle={labelStyle} />
-                    ))}
-                  </div>
-                );
-              })}
-              <div style={{ height: "20px" }} />
-            </div>
+            {previewMode === "single" ? (
+              /* Single label preview — centered, natural scale */
+              <div style={{ transform: "scale(2)", transformOrigin: "center center" }}>
+                <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
+              </div>
+            ) : (
+              /* Sheet preview — scaled to fit */
+              <div className="p-6 flex flex-col items-center gap-4 w-full">
+                {Array.from({ length: totalPages }).map((_, pi) => {
+                  const start = pi * perPage;
+                  const count = Math.min(perPage, copies - start);
+                  return (
+                    <div
+                      key={pi}
+                      style={{
+                        width: "297mm",
+                        minHeight: "210mm",
+                        background: "#fff",
+                        padding: "8mm",
+                        boxSizing: "border-box",
+                        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                        gap: "2mm",
+                        alignContent: "start",
+                        transform: "scale(0.55)",
+                        transformOrigin: "top center",
+                        marginBottom: "-95mm",
+                      }}
+                    >
+                      {Array.from({ length: count }).map((_, i) => (
+                        <LabelCard key={i} data={data} fields={fields} size={size} labelStyle={labelStyle} />
+                      ))}
+                    </div>
+                  );
+                })}
+                <div style={{ height: "20px" }} />
+              </div>
+            )}
           </div>
         </div>
       </div>
