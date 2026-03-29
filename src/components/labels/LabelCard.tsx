@@ -80,7 +80,7 @@ export default function LabelCard({
                     x="300"
                     y="100"
                     textAnchor="end"
-                    fontFamily="Arial, sans-serif"
+                    fontFamily="'Barlow Condensed', Arial Narrow, sans-serif"
                     fontWeight="900"
                     fill="#000"
                     fontSize="100"
