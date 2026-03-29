@@ -23,8 +23,8 @@ function saveSettings(data: object) {
 // Реальные размеры ценников в мм (small — ширина ячейки на книжном А4: (194−6)/cols)
 const LABEL_SIZES: Record<LabelSize, { w: number; h: number }> = {
   large:   { w: 91, h: 62 },
-  small20: { w: 47, h: 46 },
-  small30: { w: 47, h: 35 },
+  small20: { w: 50, h: 35 },
+  small30: { w: 50, h: 35 },
 };
 
 export default function Labels() {
@@ -88,8 +88,8 @@ export default function Labels() {
   // Реальное кол-во на листе: (страница_мм - отступы*2) / (ценник_мм + gap)
   const pageMmW = isLarge ? 297 : 210;
   const pageMmH = isLarge ? 210 : 297;
-  const marginMm = 8;
-  const gapMm = 2;
+  const marginMm = 3;
+  const gapMm = 1;
   const labelMmW = LABEL_SIZES[size].w;
   const labelMmH = LABEL_SIZES[size].h;
   const usableW = pageMmW - marginMm * 2;
@@ -221,12 +221,12 @@ export default function Labels() {
                         width: `${pagePxW}px`,
                         height: `${pagePxH}px`,
                         background: "#fff",
-                        padding: "8mm",
+                        padding: `${marginMm}mm`,
                         boxSizing: "border-box",
                         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
                         display: "grid",
                         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                        gap: "2mm",
+                        gap: `${gapMm}mm`,
                         alignContent: "start",
                         transform: `scale(${sheetScale})`,
                         transformOrigin: "top left",

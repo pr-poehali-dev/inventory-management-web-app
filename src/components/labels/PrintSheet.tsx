@@ -20,8 +20,16 @@ export default function PrintSheet({
   const pageH = isLarge ? "210mm" : "297mm";
   const orientation = isLarge ? "landscape" : "portrait";
 
-  const perPage = isLarge ? 9 : size === "small20" ? 20 : 24;
   const cols = isLarge ? 3 : 4;
+  const marginMm = isLarge ? 8 : 3;
+  const gapMm = isLarge ? 2 : 1;
+  const pageMmW = isLarge ? 297 : 210;
+  const pageMmH = isLarge ? 210 : 297;
+  const labelMmW = isLarge ? 91 : 50;
+  const labelMmH = isLarge ? 62 : 35;
+  const colsCalc = Math.floor((pageMmW - marginMm * 2 + gapMm) / (labelMmW + gapMm));
+  const rowsCalc = Math.floor((pageMmH - marginMm * 2 + gapMm) / (labelMmH + gapMm));
+  const perPage = isLarge ? 9 : colsCalc * rowsCalc;
   const pages = Math.ceil(copies / perPage);
 
   return (
@@ -40,11 +48,11 @@ export default function PrintSheet({
                 height: pageH,
                 background: "#fff",
                 margin: "0 auto",
-                padding: "8mm",
+                padding: `${marginMm}mm`,
                 boxSizing: "border-box",
                 display: "grid",
                 gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                gap: "2mm",
+                gap: `${gapMm}mm`,
                 alignContent: "start",
                 pageBreakAfter: pi < pages - 1 ? "always" : "auto",
               }}

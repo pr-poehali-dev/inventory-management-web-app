@@ -165,8 +165,8 @@ export default function LabelCard({
   if (fields.bigPrice) {
     return (
       <div
-        className="label-card border border-gray-300 bg-white"
-        style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        className="label-card bg-white"
+        style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "1.5px solid #000" }}
       >
         {fields.shopName && (
           <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
@@ -213,8 +213,8 @@ export default function LabelCard({
 
   return (
     <div
-      className="label-card border border-gray-300 bg-white flex flex-col"
-      style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
+      className="label-card bg-white flex flex-col"
+      style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", border: "1.5px solid #000" }}
     >
       {fields.shopName && (
         <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000" }}>
