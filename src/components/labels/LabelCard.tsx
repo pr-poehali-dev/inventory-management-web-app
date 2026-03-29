@@ -74,19 +74,21 @@ export default function LabelCard({
               )}
             </div>
             {fields.price && (
-              <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end", position: "relative" }}>
-                <div style={{
-                  fontSize: "52pt",
-                  fontWeight: 900,
-                  color: "#000",
-                  lineHeight: 1,
-                  whiteSpace: "nowrap",
-                  transformOrigin: "bottom right",
-                  transform: "scaleY(2.2)",
-                }}>
-                  {data.price}
-                </div>
-                <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000", marginTop: "1mm" }}>₽</div>
+              <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+                <svg width="44mm" height="28mm" viewBox="0 0 166 106" preserveAspectRatio="none" style={{ display: "block" }}>
+                  <text
+                    x="166"
+                    y="100"
+                    textAnchor="end"
+                    fontFamily="Arial, sans-serif"
+                    fontWeight="900"
+                    fill="#000"
+                    fontSize="100"
+                  >
+                    {data.price}
+                  </text>
+                </svg>
+                <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000", lineHeight: 1 }}>₽</div>
               </div>
             )}
           </div>
