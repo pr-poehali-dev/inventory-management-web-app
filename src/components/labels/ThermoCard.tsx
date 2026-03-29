@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { LabelData, LabelFields, ThermoWordStyle } from "./types";
 import { Barcode } from "./Barcode";
-import { WordSpans, applyTextOp, type ThermoFieldKey } from "./WordSpans";
+import { WordSpans, applyTextOp, deleteSepByTokenIdx, isWordKey, isSepKey, type ThermoFieldKey } from "./WordSpans";
 
 export function ThermoCard({
   tw, th, tp, data, fields, barcodeH, barcodeFontSize,
@@ -27,25 +27,63 @@ export function ThermoCard({
     });
   };
 
-  const firstKey = selected.size > 0 ? [...selected][0] : null;
-  const selFs = firstKey ? (words[firstKey]?.fontSize ?? defaultFs) : defaultFs;
-  const selFw = firstKey ? (words[firstKey]?.fontWeight ?? defaultFw) : defaultFw;
+  // Есть ли среди выбранных хотя бы одно слово (не сепаратор)
+  const hasWords = [...selected].some(isWordKey);
+  // Есть ли хотя бы один сепаратор
+  const hasSeps = [...selected].some(isSepKey);
+
+  const firstWordKey = [...selected].find(isWordKey) ?? null;
+  const selFs = firstWordKey ? (words[firstWordKey]?.fontSize ?? defaultFs) : defaultFs;
+  const selFw = firstWordKey ? (words[firstWordKey]?.fontWeight ?? defaultFw) : defaultFw;
 
   const applyToSelected = (patch: ThermoWordStyle) => {
-    selected.forEach((k) => onWordStyle?.(k, { ...(words[k] ?? {}), ...patch }));
+    [...selected].filter(isWordKey).forEach((k) => onWordStyle?.(k, { ...(words[k] ?? {}), ...patch }));
   };
 
-  // Применяет текстовую операцию — группируем по полю, применяем последовательно
-  const applyOp = (op: "delete" | "space" | "newline") => {
+  // Удаляет выбранные слова (word-ключи) + выбранные сепараторы (sep-ключи)
+  const applyDelete = () => {
+    // группируем слова по полю
+    const wordsByField: Record<string, number[]> = {};
+    [...selected].filter(isWordKey).forEach((k) => {
+      const [field, , idxStr] = k.split(":");
+      if (!wordsByField[field]) wordsByField[field] = [];
+      wordsByField[field].push(parseInt(idxStr));
+    });
+    // группируем сепараторы по полю: "field:s:tokIdx"
+    const sepsByField: Record<string, number[]> = {};
+    [...selected].filter(isSepKey).forEach((k) => {
+      const [field, , tokIdxStr] = k.split(":");
+      if (!sepsByField[field]) sepsByField[field] = [];
+      sepsByField[field].push(parseInt(tokIdxStr));
+    });
+
+    // Собираем все поля затронутые операцией
+    const allFields = new Set([...Object.keys(wordsByField), ...Object.keys(sepsByField)]);
+    allFields.forEach((field) => {
+      const fieldKey = field as ThermoFieldKey;
+      let text = data[fieldKey];
+      // Сначала удаляем сепараторы по убыванию tokIdx — пока слова на месте, индексы точные
+      const sIdxs = (sepsByField[field] ?? []).sort((a, b) => b - a);
+      sIdxs.forEach((tokIdx) => { text = deleteSepByTokenIdx(text, tokIdx); });
+      // Потом удаляем слова по убыванию wordIdx
+      const wIdxs = (wordsByField[field] ?? []).sort((a, b) => b - a);
+      wIdxs.forEach((idx) => { text = applyTextOp(text, idx, "delete"); });
+      onDataChange?.(fieldKey, text);
+    });
+    setSelected(new Set());
+  };
+
+  // Вставка пробела/переноса после выбранных слов
+  const applyInsert = (op: "space" | "newline") => {
     const byField: Record<string, number[]> = {};
-    [...selected].forEach((k) => {
-      const [field, idxStr] = k.split(":");
+    [...selected].filter(isWordKey).forEach((k) => {
+      const [field, , idxStr] = k.split(":");
       if (!byField[field]) byField[field] = [];
       byField[field].push(parseInt(idxStr));
     });
     Object.entries(byField).forEach(([field, indices]) => {
       const fieldKey = field as ThermoFieldKey;
-      const sorted = [...indices].sort((a, b) => op === "delete" ? b - a : a - b);
+      const sorted = [...indices].sort((a, b) => a - b);
       let text = data[fieldKey];
       sorted.forEach((idx) => { text = applyTextOp(text, idx, op); });
       onDataChange?.(fieldKey, text);
@@ -53,7 +91,7 @@ export function ThermoCard({
     setSelected(new Set());
   };
 
-  const sep = () => <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />;
+  const divider = () => <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />;
   const btn = (label: string, onClick: () => void, color = "#94a3b8", bg = "none") => (
     <button onClick={onClick} style={{ color, background: bg, border: "none", cursor: "pointer", fontSize: "11px", padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4 }}>{label}</button>
   );
@@ -82,22 +120,27 @@ export function ThermoCard({
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
           }}
         >
-          {btn("−", () => applyToSelected({ fontSize: Math.max(4, selFs - 0.5) }))}
-          <span style={{ color: "#f1f5f9", fontSize: "11px", minWidth: "30px", textAlign: "center" }}>{selFs}pt</span>
-          {btn("+", () => applyToSelected({ fontSize: Math.min(20, selFs + 0.5) }))}
-          {sep()}
-          {([400, 700, 900] as number[]).map((w) => (
-            <button key={w} onClick={() => applyToSelected({ fontWeight: w })}
-              style={{
-                color: selFw === w ? "#fff" : "#94a3b8", background: selFw === w ? "#2563eb" : "none",
-                border: "none", cursor: "pointer", fontSize: "11px", fontWeight: w, padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4,
-              }}
-            >{w === 400 ? "N" : w === 700 ? "B" : "X"}</button>
-          ))}
-          {sep()}
-          {btn("_", () => applyOp("space"), "#94a3b8")}
-          {btn("↵", () => applyOp("newline"), "#94a3b8")}
-          {btn("del", () => applyOp("delete"), "#f87171")}
+          {/* Управление размером/жирностью — только для слов */}
+          {hasWords && <>
+            {btn("−", () => applyToSelected({ fontSize: Math.max(4, selFs - 0.5) }))}
+            <span style={{ color: "#f1f5f9", fontSize: "11px", minWidth: "30px", textAlign: "center" }}>{selFs}pt</span>
+            {btn("+", () => applyToSelected({ fontSize: Math.min(20, selFs + 0.5) }))}
+            {divider()}
+            {([400, 700, 900] as number[]).map((w) => (
+              <button key={w} onClick={() => applyToSelected({ fontWeight: w })}
+                style={{
+                  color: selFw === w ? "#fff" : "#94a3b8", background: selFw === w ? "#2563eb" : "none",
+                  border: "none", cursor: "pointer", fontSize: "11px", fontWeight: w, padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4,
+                }}
+              >{w === 400 ? "N" : w === 700 ? "B" : "X"}</button>
+            ))}
+            {divider()}
+            {btn("_", () => applyInsert("space"), "#94a3b8")}
+            {btn("↵", () => applyInsert("newline"), "#94a3b8")}
+            {divider()}
+          </>}
+          {/* del — всегда, удаляет и слова и сепараторы */}
+          {(hasWords || hasSeps) && btn("del", applyDelete, "#f87171")}
         </div>
       )}
 
