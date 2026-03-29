@@ -177,39 +177,11 @@ export default function LabelsPanel({
         </div>
       )}
 
-      {/* Thermo font style */}
+      {/* Thermo hint */}
       {size.startsWith("thermo") && (
-        <div className="stat-card space-y-3">
-          <div className="section-title mb-1">Шрифт этикетки</div>
-          <Slider
-            label="Размер шрифта"
-            value={labelStyle.thermoFontSize ?? 6}
-            min={4}
-            max={12}
-            step={0.5}
-            onChange={(v) => setLabelStyle((s) => ({ ...s, thermoFontSize: v }))}
-          />
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-muted-foreground">Жирность</span>
-            </div>
-            <div className="flex gap-1.5">
-              {([400, 500, 600, 700, 800, 900] as number[]).map((w) => (
-                <button
-                  key={w}
-                  onClick={() => setLabelStyle((s) => ({ ...s, thermoFontWeight: w }))}
-                  className="flex-1 py-1.5 rounded-lg border text-xs transition-all"
-                  style={{
-                    fontWeight: w,
-                    background: (labelStyle.thermoFontWeight ?? 700) === w ? "hsl(var(--wms-blue) / 0.12)" : "hsl(var(--muted))",
-                    borderColor: (labelStyle.thermoFontWeight ?? 700) === w ? "hsl(var(--wms-blue) / 0.5)" : "hsl(var(--border))",
-                    color: "hsl(var(--foreground))",
-                  }}
-                >
-                  {w}
-                </button>
-              ))}
-            </div>
+        <div className="stat-card">
+          <div className="text-xs text-muted-foreground leading-relaxed">
+            Кликни на любое поле этикетки в превью — появится панель размера и жирности шрифта.
           </div>
         </div>
       )}

@@ -60,6 +60,7 @@ export default function Labels() {
     priceFont: "'Barlow Condensed', Arial Narrow, sans-serif",
     thermoFontSize: 6,
     thermoFontWeight: 700,
+    thermoFields: {},
   });
 
   // Сохраняем при каждом изменении
@@ -210,9 +211,11 @@ export default function Labels() {
           <div
             ref={previewRef}
             className={`flex-1 rounded-lg border border-border ${
-              previewMode === "single" || isThermo
-                ? "overflow-hidden flex items-center justify-center"
-                : "overflow-auto scrollbar-thin flex flex-col items-center"
+              isThermo
+                ? "overflow-visible flex items-center justify-center"
+                : previewMode === "single"
+                  ? "overflow-hidden flex items-center justify-center"
+                  : "overflow-auto scrollbar-thin flex flex-col items-center"
             }`}
             style={{ background: "hsl(220 14% 12%)" }}
           >
@@ -224,8 +227,17 @@ export default function Labels() {
                 width: `${labelPxW}px`,
                 height: `${labelPxH}px`,
                 flexShrink: 0,
+                overflow: "visible",
               }}>
-                <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
+                <LabelCard
+                  data={data} fields={fields} size={size} labelStyle={labelStyle}
+                  onThermoFieldStyle={isThermo ? (field, style) => {
+                    setLabelStyle((s) => ({
+                      ...s,
+                      thermoFields: { ...(s.thermoFields ?? {}), [field]: style },
+                    }));
+                  } : undefined}
+                />
               </div>
             ) : (
               <div className="flex flex-col items-center" style={{ gap: `${pagePxH * sheetScale + 16}px`, paddingTop: "24px", paddingBottom: "24px" }}>
