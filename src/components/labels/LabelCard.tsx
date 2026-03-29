@@ -157,9 +157,9 @@ export default function LabelCard({
     );
   }
 
-  // Small variants
-  const w = is30 ? "60mm" : "65mm";
-  const h = is30 ? "26mm" : "29mm";
+  // Small variants — ширина 100% (растягивается по ячейке сетки), высота фиксирована
+  const w = "100%";
+  const h = is30 ? "40mm" : "46mm";
   const p = "1.5mm";
 
   if (fields.bigPrice) {

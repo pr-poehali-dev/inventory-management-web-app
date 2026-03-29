@@ -20,11 +20,11 @@ function saveSettings(data: object) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_) { /* ignore */ }
 }
 
-// Реальные размеры ценников в мм
+// Реальные размеры ценников в мм (small — ширина ячейки на книжном А4: (194−6)/cols)
 const LABEL_SIZES: Record<LabelSize, { w: number; h: number }> = {
   large:   { w: 91, h: 62 },
-  small20: { w: 65, h: 29 },
-  small30: { w: 60, h: 26 },
+  small20: { w: 47, h: 46 },
+  small30: { w: 37, h: 40 },
 };
 
 export default function Labels() {
