@@ -100,13 +100,21 @@ function LabelCard({
                 <div style={{ fontSize: "7pt", color: "#555" }}>{data.date}</div>
               )}
             </div>
-            {/* Right column: huge price + ₽ bottom-right */}
+            {/* Right column: huge price stretched to full height */}
             {fields.price && (
-              <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-                <div style={{ fontSize: "52pt", fontWeight: 900, color: "#000", lineHeight: 1, whiteSpace: "nowrap", transformOrigin: "bottom right", transform: "scale(1)" }}>
+              <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end", position: "relative" }}>
+                <div style={{
+                  fontSize: "52pt",
+                  fontWeight: 900,
+                  color: "#000",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  transformOrigin: "bottom right",
+                  transform: "scaleY(2.2)",
+                }}>
                   {data.price}
                 </div>
-                <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000" }}>₽</div>
+                <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000", marginTop: "1mm" }}>₽</div>
               </div>
             )}
           </div>
