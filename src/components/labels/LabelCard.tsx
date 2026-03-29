@@ -110,23 +110,27 @@ function WordSpans({
   );
 }
 
-// Применяет операцию к тексту: удалить токен, вставить пробел или перенос после
+// Применяет операцию к тексту: удалить слово, вставить пробел или перенос ПОСЛЕ него
 function applyTextOp(text: string, wordIdx: number, op: "delete" | "space" | "newline"): string {
-  const tokens = text.split(/(\s+)/);
-  // собираем только «слова» с их позициями в tokens[]
+  // Тот же сплит что в WordSpans — чтобы индексы совпадали
+  const tokens = text.split(/(\s+|\n)/).filter((t) => t !== "");
+  // Находим реальные слова (не пробелы и не \n)
   const wordPositions: number[] = [];
-  tokens.forEach((t, i) => { if (!/^\s+$/.test(t)) wordPositions.push(i); });
+  tokens.forEach((t, i) => {
+    if (t !== "\n" && !/^\s+$/.test(t)) wordPositions.push(i);
+  });
   const tokIdx = wordPositions[wordIdx];
   if (tokIdx === undefined) return text;
   const next = [...tokens];
   if (op === "delete") {
-    // удаляем слово и соседний пробел
     next.splice(tokIdx, 1);
-    // убираем лишний разделитель рядом
-    if (next[tokIdx] && /^\s+$/.test(next[tokIdx])) next.splice(tokIdx, 1);
-    else if (tokIdx > 0 && /^\s+$/.test(next[tokIdx - 1])) next.splice(tokIdx - 1, 1);
+    // убираем соседний разделитель
+    const after = next[tokIdx];
+    const before = next[tokIdx - 1];
+    if (after !== undefined && (after === "\n" || /^\s+$/.test(after))) next.splice(tokIdx, 1);
+    else if (before !== undefined && (before === "\n" || /^\s+$/.test(before))) next.splice(tokIdx - 1, 1);
   } else if (op === "space") {
-    next.splice(tokIdx + 1, 0, "  ");
+    next.splice(tokIdx + 1, 0, " ");
   } else if (op === "newline") {
     next.splice(tokIdx + 1, 0, "\n");
   }
@@ -165,21 +169,22 @@ function ThermoCard({
     selected.forEach((k) => onWordStyle?.(k, { ...(words[k] ?? {}), ...patch }));
   };
 
-  // Применяет текстовую операцию к полю по ключу слова "field:idx"
+  // Применяет текстовую операцию — группируем по полю, применяем последовательно
   const applyOp = (op: "delete" | "space" | "newline") => {
-    const keys = [...selected];
-    // сортируем по убыванию индекса чтобы удаление не смещало позиции
-    keys.sort((a, b) => {
-      const ai = parseInt(a.split(":")[1]); 
-      const bi = parseInt(b.split(":")[1]);
-      return op === "delete" ? bi - ai : ai - bi;
-    });
-    keys.forEach((k) => {
+    // группируем ключи по полю
+    const byField: Record<string, number[]> = {};
+    [...selected].forEach((k) => {
       const [field, idxStr] = k.split(":");
+      if (!byField[field]) byField[field] = [];
+      byField[field].push(parseInt(idxStr));
+    });
+    Object.entries(byField).forEach(([field, indices]) => {
       const fieldKey = field as ThermoFieldKey;
-      const idx = parseInt(idxStr);
-      const text = data[fieldKey];
-      onDataChange?.(fieldKey, applyTextOp(text, idx, op));
+      // при delete идём с конца чтобы индексы не смещались, иначе с начала
+      const sorted = [...indices].sort((a, b) => op === "delete" ? b - a : a - b);
+      let text = data[fieldKey];
+      sorted.forEach((idx) => { text = applyTextOp(text, idx, op); });
+      onDataChange?.(fieldKey, text);
     });
     setSelected(new Set());
   };
