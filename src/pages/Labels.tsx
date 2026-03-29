@@ -70,7 +70,7 @@ function LabelCard({
       return (
         <div
           className="label-card border border-gray-300 bg-white"
-          style={{ width: "91mm", height: "62mm", padding: "3mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column" }}
+          style={{ width: "91mm", height: "62mm", padding: "3mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
         >
           {/* Row 1: shop name */}
           {fields.shopName && (
@@ -102,11 +102,11 @@ function LabelCard({
             </div>
             {/* Right column: huge price + ₽ bottom-right */}
             {fields.price && (
-              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-                <div style={{ fontSize: "34pt", fontWeight: 900, color: "#000", lineHeight: 1, whiteSpace: "nowrap" }}>
+              <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+                <div style={{ fontSize: "52pt", fontWeight: 900, color: "#000", lineHeight: 1, whiteSpace: "nowrap", transformOrigin: "bottom right", transform: "scale(1)" }}>
                   {data.price}
                 </div>
-                <div style={{ fontSize: "10pt", fontWeight: 700, color: "#000", marginTop: "0.5mm" }}>₽</div>
+                <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000" }}>₽</div>
               </div>
             )}
           </div>
