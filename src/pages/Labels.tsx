@@ -135,9 +135,9 @@ export default function Labels() {
   const labelMm = LABEL_SIZES[size];
   const labelPxW = labelMm.w * PX_PER_MM;
   const labelPxH = labelMm.h * PX_PER_MM;
-  // Для термо-ленты масштабируем только по высоте (лента горизонтальная)
+  // Для термо-ленты масштабируем по ширине (лента вертикальная)
   const singleScale = isThermo && previewMode === "sheet"
-    ? Math.min((containerSize.h - 80) / labelPxH, 3)
+    ? Math.min((containerSize.w - 80) / labelPxW, 3)
     : Math.min(
         (containerSize.w - 80) / labelPxW,
         (containerSize.h - 80) / labelPxH,
@@ -208,7 +208,7 @@ export default function Labels() {
               previewMode === "single"
                 ? "overflow-hidden flex items-center justify-center"
                 : isThermo
-                  ? "overflow-hidden flex items-center"
+                  ? "overflow-hidden flex justify-center"
                   : "overflow-auto scrollbar-thin flex flex-col items-center"
             }`}
             style={{ background: "hsl(220 14% 12%)" }}
@@ -225,28 +225,28 @@ export default function Labels() {
                 <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
               </div>
             ) : isThermo ? (
-              /* Термо: горизонтальная лента этикеток */
+              /* Термо: вертикальная лента этикеток */
               <div
-                className="flex items-center overflow-x-auto overflow-y-hidden scrollbar-thin h-full w-full"
-                style={{ padding: "24px 32px", gap: `${Math.round(singleScale * 12)}px` }}
+                className="flex flex-col items-center overflow-y-auto overflow-x-hidden scrollbar-thin w-full"
+                style={{ padding: "24px 32px", gap: `${Math.round(singleScale * 8)}px` }}
               >
                 {Array.from({ length: copies }).map((_, i) => (
                   <div
                     key={i}
                     style={{
                       transform: `scale(${singleScale})`,
-                      transformOrigin: "center center",
+                      transformOrigin: "top center",
                       width: `${labelPxW}px`,
                       height: `${labelPxH}px`,
                       flexShrink: 0,
                       boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-                      marginLeft: `-${labelPxW * (1 - singleScale) / 2}px`,
-                      marginRight: `-${labelPxW * (1 - singleScale) / 2}px`,
+                      marginBottom: `-${labelPxH * (1 - singleScale)}px`,
                     }}
                   >
                     <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
                   </div>
                 ))}
+                <div style={{ height: "24px", flexShrink: 0 }} />
               </div>
             ) : (
               <div className="flex flex-col items-center" style={{ gap: `${pagePxH * sheetScale + 16}px`, paddingTop: "24px", paddingBottom: "24px" }}>
