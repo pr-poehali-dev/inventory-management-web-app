@@ -20,8 +20,8 @@ export default function PrintSheet({
   const pageH = isLarge ? "210mm" : "297mm";
   const orientation = isLarge ? "landscape" : "portrait";
 
-  const perPage = isLarge ? 9 : size === "small20" ? 20 : 30;
-  const cols = isLarge ? 3 : size === "small20" ? 4 : 5;
+  const perPage = isLarge ? 9 : size === "small20" ? 20 : 24;
+  const cols = isLarge ? 3 : 4;
   const pages = Math.ceil(copies / perPage);
 
   return (

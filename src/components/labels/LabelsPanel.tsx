@@ -4,7 +4,7 @@ import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
 const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
   { id: "large", label: "Большой", sub: "9 на листе А4" },
   { id: "small20", label: "Маленький 20", sub: "20 на листе А4" },
-  { id: "small30", label: "Маленький 30", sub: "30 на листе А4" },
+  { id: "small30", label: "Маленький 24", sub: "24 на листе А4" },
 ];
 
 const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean }[] = [

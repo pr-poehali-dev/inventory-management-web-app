@@ -24,7 +24,7 @@ function saveSettings(data: object) {
 const LABEL_SIZES: Record<LabelSize, { w: number; h: number }> = {
   large:   { w: 91, h: 62 },
   small20: { w: 47, h: 46 },
-  small30: { w: 37, h: 40 },
+  small30: { w: 47, h: 35 },
 };
 
 export default function Labels() {
@@ -84,8 +84,8 @@ export default function Labels() {
   };
 
   const isLarge = size === "large";
-  const perPage = isLarge ? 9 : size === "small20" ? 20 : 30;
-  const cols = isLarge ? 3 : size === "small20" ? 4 : 5;
+  const perPage = isLarge ? 9 : size === "small20" ? 20 : 24;
+  const cols = isLarge ? 3 : 4;
   const totalPages = Math.ceil(copies / perPage);
   // Размер листа для предпросмотра
   const pagePreviewW = isLarge ? "297mm" : "210mm";

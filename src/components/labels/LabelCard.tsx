@@ -159,7 +159,7 @@ export default function LabelCard({
 
   // Small variants — ширина 100% (растягивается по ячейке сетки), высота фиксирована
   const w = "100%";
-  const h = is30 ? "40mm" : "46mm";
+  const h = is30 ? "35mm" : "46mm";
   const p = "1.5mm";
 
   if (fields.bigPrice) {
