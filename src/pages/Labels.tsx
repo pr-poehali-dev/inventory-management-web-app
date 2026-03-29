@@ -61,6 +61,7 @@ export default function Labels() {
     thermoFontSize: 6,
     thermoFontWeight: 700,
     thermoFields: {},
+    thermoWords: {},
   });
 
   // Сохраняем при каждом изменении
@@ -231,10 +232,10 @@ export default function Labels() {
               }}>
                 <LabelCard
                   data={data} fields={fields} size={size} labelStyle={labelStyle}
-                  onThermoFieldStyle={isThermo ? (field, style) => {
+                  onThermoWordStyle={isThermo ? (wordKey, style) => {
                     setLabelStyle((s) => ({
                       ...s,
-                      thermoFields: { ...(s.thermoFields ?? {}), [field]: style },
+                      thermoWords: { ...(s.thermoWords ?? {}), [wordKey]: style },
                     }));
                   } : undefined}
                 />

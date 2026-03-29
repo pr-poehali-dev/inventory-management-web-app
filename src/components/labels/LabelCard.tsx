@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import JsBarcode from "jsbarcode";
-import type { LabelData, LabelFields, LabelSize, LabelStyle, ThermoFieldStyle } from "./types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle, ThermoFieldStyle, ThermoWordStyle } from "./types";
 
 // ─── Barcode ──────────────────────────────────────────────────────────────────
 
@@ -64,85 +64,135 @@ function BigPriceSvg({ price, style }: { price: string; style: LabelStyle }) {
 
 type ThermoFieldKey = keyof Omit<LabelData, 'barcode'>;
 
+// Разбивает текст на слова и рендерит каждое кликабельным спаном
+function WordSpans({
+  text, fieldKey, defaultFs, defaultFw, words, selected, editable,
+  onWordClick,
+}: {
+  text: string;
+  fieldKey: ThermoFieldKey;
+  defaultFs: number;
+  defaultFw: number;
+  words: Record<string, ThermoWordStyle>;
+  selected: Set<string>;
+  editable: boolean;
+  onWordClick: (key: string, e: React.MouseEvent) => void;
+}) {
+  const tokens = text.split(/(\s+)/);
+  let wordIdx = 0;
+  return (
+    <>
+      {tokens.map((token, i) => {
+        if (/^\s+$/.test(token)) return <span key={i}>{token}</span>;
+        const key = `${fieldKey}:${wordIdx++}`;
+        const ws = words[key];
+        const isSelected = selected.has(key);
+        return (
+          <span
+            key={key}
+            onClick={editable ? (e) => onWordClick(key, e) : undefined}
+            style={{
+              fontSize: ws?.fontSize ? `${ws.fontSize}pt` : `${defaultFs}pt`,
+              fontWeight: ws?.fontWeight ?? defaultFw,
+              cursor: editable ? "pointer" : "default",
+              background: isSelected ? "rgba(37,99,235,0.18)" : "transparent",
+              borderRadius: "1px",
+              outline: isSelected ? "1px solid #2563eb" : "none",
+              display: "inline",
+            }}
+          >{token}</span>
+        );
+      })}
+    </>
+  );
+}
+
 function ThermoCard({
-  tw, th, tp, data, fields, fs, fw, barcodeH, barcodeFontSize,
-  defaultFs, defaultFw, tf, editable, onFieldStyle,
+  tw, th, tp, data, fields, barcodeH, barcodeFontSize,
+  defaultFs, defaultFw, words, editable, onWordStyle,
 }: {
   tw: string; th: string; tp: string;
   data: LabelData; fields: LabelFields;
-  fs: (f: ThermoFieldKey) => string;
-  fw: (f: ThermoFieldKey) => number;
   barcodeH: number; barcodeFontSize: number;
   defaultFs: number; defaultFw: number;
-  tf: Partial<Record<ThermoFieldKey, ThermoFieldStyle>>;
+  words: Record<string, ThermoWordStyle>;
   editable: boolean;
-  onFieldStyle?: (field: ThermoFieldKey, style: ThermoFieldStyle) => void;
+  onWordStyle?: (wordKey: string, style: ThermoWordStyle) => void;
 }) {
-  const [selected, setSelected] = useState<ThermoFieldKey | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const handleClick = (e: React.MouseEvent, field: ThermoFieldKey) => {
-    if (!editable) return;
+  const handleWordClick = (key: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelected(selected === field ? null : field);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
   };
 
-  const selFs = selected ? (tf[selected]?.fontSize ?? defaultFs) : defaultFs;
-  const selFw = selected ? (tf[selected]?.fontWeight ?? defaultFw) : defaultFw;
+  // Текущие стили выделенных слов (берём из первого выделенного)
+  const firstKey = selected.size > 0 ? [...selected][0] : null;
+  const selFs = firstKey ? (words[firstKey]?.fontSize ?? defaultFs) : defaultFs;
+  const selFw = firstKey ? (words[firstKey]?.fontWeight ?? defaultFw) : defaultFw;
 
-  const fieldStyle = (field: ThermoFieldKey): React.CSSProperties => ({
-    cursor: editable ? "pointer" : "default",
-    outline: selected === field ? "1px dashed #2563eb" : "1px dashed transparent",
-    borderRadius: "0.5mm",
-    padding: "0.2mm 0.4mm",
-    margin: "-0.2mm -0.4mm",
+  const applyToSelected = (patch: ThermoWordStyle) => {
+    selected.forEach((k) => onWordStyle?.(k, { ...(words[k] ?? {}), ...patch }));
+  };
+
+  const baseStyle = (color = "#000"): React.CSSProperties => ({
+    fontSize: `${defaultFs}pt`,
+    fontWeight: defaultFw,
+    color,
+    lineHeight: 1.2,
   });
 
   return (
     <div
       className="label-card bg-white"
       style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "visible", border: "1px solid #ccc", borderRadius: "2mm", position: "relative" }}
-      onClick={() => setSelected(null)}
+      onClick={() => setSelected(new Set())}
     >
-      {/* Тулбар над выбранным полем */}
-      {editable && selected && (
+      {/* Тулбар */}
+      {editable && selected.size > 0 && (
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            position: "absolute", bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)",
-            background: "#1e293b", borderRadius: "6px", padding: "4px 6px",
+            position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+            background: "#1e293b", borderRadius: "6px", padding: "4px 8px",
             display: "flex", alignItems: "center", gap: "4px", zIndex: 100,
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
           }}
         >
-          <button onClick={() => onFieldStyle?.(selected, { fontSize: Math.max(4, selFs - 0.5), fontWeight: selFw })}
-            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "2px 4px", lineHeight: 1 }}>−</button>
-          <span style={{ color: "#f1f5f9", fontSize: "11px", minWidth: "28px", textAlign: "center" }}>{selFs}pt</span>
-          <button onClick={() => onFieldStyle?.(selected, { fontSize: Math.min(20, selFs + 0.5), fontWeight: selFw })}
-            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: "2px 4px", lineHeight: 1 }}>+</button>
+          <button onClick={() => applyToSelected({ fontSize: Math.max(4, selFs - 0.5) })}
+            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "13px", padding: "2px 4px", lineHeight: 1 }}>−</button>
+          <span style={{ color: "#f1f5f9", fontSize: "11px", minWidth: "30px", textAlign: "center" }}>{selFs}pt</span>
+          <button onClick={() => applyToSelected({ fontSize: Math.min(20, selFs + 0.5) })}
+            style={{ color: "#94a3b8", background: "none", border: "none", cursor: "pointer", fontSize: "13px", padding: "2px 4px", lineHeight: 1 }}>+</button>
           <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />
           {([400, 700, 900] as number[]).map((w) => (
-            <button key={w} onClick={() => onFieldStyle?.(selected, { fontSize: selFs, fontWeight: w })}
+            <button key={w} onClick={() => applyToSelected({ fontWeight: w })}
               style={{
                 color: selFw === w ? "#fff" : "#94a3b8",
                 background: selFw === w ? "#2563eb" : "none",
                 border: "none", cursor: "pointer", fontSize: "11px",
-                fontWeight: w, padding: "2px 5px", borderRadius: "4px", lineHeight: 1,
+                fontWeight: w, padding: "2px 6px", borderRadius: "4px", lineHeight: 1.4,
               }}
             >{w === 400 ? "N" : w === 700 ? "B" : "X"}</button>
           ))}
+          <div style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />
+          <button onClick={() => { selected.forEach((k) => onWordStyle?.(k, {})); setSelected(new Set()); }}
+            style={{ color: "#f87171", background: "none", border: "none", cursor: "pointer", fontSize: "10px", padding: "2px 4px", lineHeight: 1 }}>✕</button>
         </div>
       )}
 
       {fields.shopName && (
-        <div onClick={(e) => handleClick(e, "shopName")}
-          style={{ ...fieldStyle("shopName"), fontSize: fs("shopName"), fontWeight: fw("shopName"), textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.3mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
-          {data.shopName}
+        <div style={{ ...baseStyle(), textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.3mm", marginBottom: "0.5mm", flexShrink: 0 }}>
+          <WordSpans text={data.shopName} fieldKey="shopName" defaultFs={defaultFs} defaultFw={defaultFw} words={words} selected={selected} editable={editable} onWordClick={handleWordClick} />
         </div>
       )}
       {fields.productName && (
-        <div onClick={(e) => handleClick(e, "productName")}
-          style={{ ...fieldStyle("productName"), fontSize: fs("productName"), fontWeight: fw("productName"), lineHeight: 1.1, color: "#000", marginBottom: "0.5mm", flexShrink: 0, overflow: "hidden" }}>
-          {data.productName}
+        <div style={{ ...baseStyle(), marginBottom: "0.5mm", flexShrink: 0, overflow: "hidden" }}>
+          <WordSpans text={data.productName} fieldKey="productName" defaultFs={defaultFs} defaultFw={defaultFw} words={words} selected={selected} editable={editable} onWordClick={handleWordClick} />
         </div>
       )}
       <div style={{ display: "flex", flex: 1, gap: "1mm", minHeight: 0, alignItems: "flex-end" }}>
@@ -151,23 +201,21 @@ function ThermoCard({
             <div><Barcode value={data.barcode} height={barcodeH} fontSize={barcodeFontSize} /></div>
           )}
           {fields.article && (
-            <div onClick={(e) => handleClick(e, "article")}
-              style={{ ...fieldStyle("article"), fontSize: fs("article"), fontWeight: fw("article"), color: "#333", marginTop: "0.3mm" }}>
-              Арт: {data.article}
+            <div style={{ ...baseStyle("#333"), marginTop: "0.3mm" }}>
+              <WordSpans text={`Арт: ${data.article}`} fieldKey="article" defaultFs={defaultFs} defaultFw={defaultFw} words={words} selected={selected} editable={editable} onWordClick={handleWordClick} />
             </div>
           )}
           {fields.date && (
-            <div onClick={(e) => handleClick(e, "date")}
-              style={{ ...fieldStyle("date"), fontSize: fs("date"), fontWeight: fw("date"), color: "#333" }}>
-              {data.date}
+            <div style={baseStyle("#333")}>
+              <WordSpans text={data.date} fieldKey="date" defaultFs={defaultFs} defaultFw={defaultFw} words={words} selected={selected} editable={editable} onWordClick={handleWordClick} />
             </div>
           )}
         </div>
         {fields.price && (
-          <div onClick={(e) => handleClick(e, "price")}
-            style={{ ...fieldStyle("price"), flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-            <div style={{ fontSize: `calc(${fs("price")} * 1.8)`, fontWeight: fw("price"), color: "#000", lineHeight: 1 }}>
-              {data.price} <span style={{ fontSize: fs("price") }}>₽</span>
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
+            <div style={{ ...baseStyle(), fontSize: `${defaultFs * 1.8}pt`, lineHeight: 1 }}>
+              <WordSpans text={data.price} fieldKey="price" defaultFs={defaultFs * 1.8} defaultFw={defaultFw} words={words} selected={selected} editable={editable} onWordClick={handleWordClick} />
+              {" "}<span style={{ fontSize: `${defaultFs}pt` }}>₽</span>
             </div>
           </div>
         )}
@@ -183,13 +231,13 @@ export default function LabelCard({
   fields,
   size,
   labelStyle,
-  onThermoFieldStyle,
+  onThermoWordStyle,
 }: {
   data: LabelData;
   fields: LabelFields;
   size: LabelSize;
   labelStyle: LabelStyle;
-  onThermoFieldStyle?: (field: keyof Omit<LabelData, 'barcode'>, style: ThermoFieldStyle) => void;
+  onThermoWordStyle?: (wordKey: string, style: ThermoWordStyle) => void;
 }) {
   const isLarge = size === "large";
   const isThermo = size.startsWith("thermo");
@@ -291,20 +339,17 @@ export default function LabelCard({
     const barcodeFontSize = isNarrow ? 7 : 9;
     const defaultFs = labelStyle.thermoFontSize ?? 6;
     const defaultFw = labelStyle.thermoFontWeight ?? 700;
-    const tf = labelStyle.thermoFields ?? {};
-
-    const fs = (field: keyof Omit<LabelData, 'barcode'>) => `${tf[field]?.fontSize ?? defaultFs}pt`;
-    const fw = (field: keyof Omit<LabelData, 'barcode'>) => tf[field]?.fontWeight ?? defaultFw;
+    const words = labelStyle.thermoWords ?? {};
 
     return (
       <ThermoCard
         tw={tw} th={th} tp={tp}
         data={data} fields={fields}
-        fs={fs} fw={fw}
         barcodeH={barcodeH} barcodeFontSize={barcodeFontSize}
-        defaultFs={defaultFs} defaultFw={defaultFw} tf={tf}
-        editable={!!onThermoFieldStyle}
-        onFieldStyle={onThermoFieldStyle}
+        defaultFs={defaultFs} defaultFw={defaultFw}
+        words={words}
+        editable={!!onThermoWordStyle}
+        onWordStyle={onThermoWordStyle}
       />
     );
   }

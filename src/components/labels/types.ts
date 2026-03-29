@@ -10,9 +10,9 @@ export interface LabelFields {
   bigPrice: boolean;
 }
 
-export interface ThermoFieldStyle {
-  fontSize: number;
-  fontWeight: number;
+export interface ThermoWordStyle {
+  fontSize?: number;
+  fontWeight?: number;
 }
 
 export interface LabelStyle {
@@ -22,6 +22,12 @@ export interface LabelStyle {
   thermoFontSize: number;
   thermoFontWeight: number;
   thermoFields: Partial<Record<keyof Omit<LabelData, 'barcode'>, ThermoFieldStyle>>;
+  thermoWords: Record<string, ThermoWordStyle>;
+}
+
+export interface ThermoFieldStyle {
+  fontSize: number;
+  fontWeight: number;
 }
 
 export interface LabelData {
