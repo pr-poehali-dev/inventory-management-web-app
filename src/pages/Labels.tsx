@@ -71,7 +71,6 @@ export default function Labels() {
       @media print {
         body > * { display: none !important; }
         #print-portal { display: block !important; }
-        @page { size: A4 landscape; margin: 0; }
       }
     `;
     document.head.appendChild(style);
@@ -84,11 +83,19 @@ export default function Labels() {
     }, 500);
   };
 
-  const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
-  const cols = size === "large" ? 3 : size === "small20" ? 4 : 5;
-  const rows = size === "large" ? 3 : size === "small20" ? 5 : 6;
-  const rowH = size === "large" ? "1fr" : `${Math.floor(194 / rows)}mm`;
+  const isLarge = size === "large";
+  const perPage = isLarge ? 9 : size === "small20" ? 20 : 30;
+  const cols = isLarge ? 3 : size === "small20" ? 4 : 5;
+  const rows = isLarge ? 3 : size === "small20" ? 5 : 6;
+  const workH = isLarge ? 194 : 281;
+  const rowH = `${Math.floor(workH / rows)}mm`;
   const totalPages = Math.ceil(copies / perPage);
+  // Размер листа для предпросмотра
+  const pagePreviewW = isLarge ? "297mm" : "210mm";
+  const pagePreviewH = isLarge ? "210mm" : "297mm";
+  // Масштаб листа в предпросмотре
+  const sheetScale = isLarge ? 0.55 : 0.45;
+  const sheetMarginBottom = isLarge ? "-95mm" : "-160mm";
 
   // Масштаб одного ценника: вписываем реальный мм-размер в контейнер ~600×350px
   const labelMm = LABEL_SIZES[size];
@@ -179,8 +186,8 @@ export default function Labels() {
                     <div
                       key={pi}
                       style={{
-                        width: "297mm",
-                        minHeight: "210mm",
+                        width: pagePreviewW,
+                        height: pagePreviewH,
                         background: "#fff",
                         padding: "8mm",
                         boxSizing: "border-box",
@@ -190,9 +197,10 @@ export default function Labels() {
                         gridAutoRows: rowH,
                         gap: "2mm",
                         alignContent: "start",
-                        transform: "scale(0.55)",
+                        transform: `scale(${sheetScale})`,
                         transformOrigin: "top center",
-                        marginBottom: "-95mm",
+                        marginBottom: sheetMarginBottom,
+                        flexShrink: 0,
                       }}
                     >
                       {Array.from({ length: count }).map((_, i) => (
