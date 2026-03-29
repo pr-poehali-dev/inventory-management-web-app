@@ -62,6 +62,8 @@ export default function Labels() {
 
   const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
   const cols = size === "large" ? 3 : size === "small20" ? 4 : 5;
+  const rows = size === "large" ? 3 : size === "small20" ? 5 : 6;
+  const rowH = size === "large" ? "1fr" : `${Math.floor(194 / rows)}mm`;
   const totalPages = Math.ceil(copies / perPage);
 
   return (
@@ -153,6 +155,7 @@ export default function Labels() {
                         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
                         display: "grid",
                         gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                        gridAutoRows: rowH,
                         gap: "2mm",
                         alignContent: "start",
                         transform: "scale(0.55)",

@@ -18,6 +18,8 @@ export default function PrintSheet({
   const total = copies;
   const pages = Math.ceil(total / perPage);
   const cols = size === "large" ? 3 : size === "small20" ? 4 : 5;
+  const rows = size === "large" ? 3 : size === "small20" ? 5 : 6;
+  const rowH = size === "large" ? "1fr" : `${Math.floor(194 / rows)}mm`;
 
   return (
     <div id="print-area">
@@ -37,6 +39,7 @@ export default function PrintSheet({
               boxSizing: "border-box",
               display: "grid",
               gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gridAutoRows: rowH,
               gap: "2mm",
               alignContent: "start",
               pageBreakAfter: pi < pages - 1 ? "always" : "auto",

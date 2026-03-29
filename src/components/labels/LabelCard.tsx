@@ -158,18 +158,13 @@ export default function LabelCard({
   }
 
   // Small variants
-  const w = is30 ? "60mm" : "65mm";
-  const h = is30 ? "26mm" : "29mm";
   const p = "1.5mm";
-  // SVG price block: ~half width, full height of bottom area
-  const svgW = is30 ? "28mm" : "30mm";
-  const svgH = is30 ? "14mm" : "16mm";
 
   if (fields.bigPrice) {
     return (
       <div
         className="label-card border border-gray-300 bg-white"
-        style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ width: "100%", height: "100%", padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {fields.shopName && (
           <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
@@ -192,8 +187,8 @@ export default function LabelCard({
             {fields.date && <div style={{ fontSize: "5pt", color: "#555" }}>{data.date}</div>}
           </div>
           {fields.price && (
-            <div style={{ width: svgW, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-              <svg width={svgW} height={svgH} viewBox="0 0 300 106" preserveAspectRatio="none" style={{ display: "block" }}>
+            <div style={{ width: "45%", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+              <svg width="100%" height="100%" viewBox="0 0 300 106" preserveAspectRatio="none" style={{ display: "block", flex: 1 }}>
                 <text
                   x="300"
                   y="100"
@@ -217,7 +212,7 @@ export default function LabelCard({
   return (
     <div
       className="label-card border border-gray-300 bg-white flex flex-col"
-      style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
+      style={{ width: "100%", height: "100%", padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
     >
       {fields.shopName && (
         <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000" }}>
