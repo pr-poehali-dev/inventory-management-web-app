@@ -68,36 +68,36 @@ function LabelCard({
     return (
       <div
         className="label-card border border-gray-300 bg-white flex flex-col"
-        style={{ width: "62mm", height: "32mm", padding: "2mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
+        style={{ width: "91mm", height: "62mm", padding: "3mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
       >
         {fields.shopName && (
-          <div style={{ fontSize: "7pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "1mm", marginBottom: "1mm", color: "#000" }}>
+          <div style={{ fontSize: "9pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "1.5mm", marginBottom: "1.5mm", color: "#000" }}>
             {data.shopName}
           </div>
         )}
         {fields.productName && (
-          <div style={{ fontSize: "7.5pt", fontWeight: 700, lineHeight: 1.2, color: "#000", marginBottom: "1mm", flexShrink: 0 }}>
+          <div style={{ fontSize: "10pt", fontWeight: 700, lineHeight: 1.25, color: "#000", marginBottom: "1.5mm", flexShrink: 0 }}>
             {data.productName}
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "auto" }}>
           <div>
             {fields.article && (
-              <div style={{ fontSize: "6pt", color: "#555" }}>Арт: {data.article}</div>
+              <div style={{ fontSize: "7.5pt", color: "#555" }}>Арт: {data.article}</div>
             )}
             {fields.date && (
-              <div style={{ fontSize: "6pt", color: "#555" }}>{data.date}</div>
+              <div style={{ fontSize: "7.5pt", color: "#555" }}>{data.date}</div>
             )}
           </div>
           {fields.price && (
-            <div style={{ fontSize: "14pt", fontWeight: 900, color: "#000", lineHeight: 1 }}>
-              {data.price} <span style={{ fontSize: "8pt" }}>₽</span>
+            <div style={{ fontSize: "20pt", fontWeight: 900, color: "#000", lineHeight: 1 }}>
+              {data.price} <span style={{ fontSize: "11pt" }}>₽</span>
             </div>
           )}
         </div>
         {fields.barcode && (
-          <div style={{ marginTop: "1mm" }}>
-            <Barcode value={data.barcode} height={22} fontSize={6} />
+          <div style={{ marginTop: "1.5mm" }}>
+            <Barcode value={data.barcode} height={32} fontSize={7} />
           </div>
         )}
       </div>
