@@ -124,11 +124,16 @@ function applyTextOp(text: string, wordIdx: number, op: "delete" | "space" | "ne
   const next = [...tokens];
   if (op === "delete") {
     next.splice(tokIdx, 1);
-    // убираем соседний разделитель
-    const after = next[tokIdx];
+    // после удаления слова tokIdx теперь указывает на следующий токен
+    // предпочитаем убрать разделитель ПЕРЕД удалённым словом (tokIdx-1),
+    // если его нет — убираем разделитель ПОСЛЕ (новый tokIdx)
     const before = next[tokIdx - 1];
-    if (after !== undefined && (after === "\n" || /^\s+$/.test(after))) next.splice(tokIdx, 1);
-    else if (before !== undefined && (before === "\n" || /^\s+$/.test(before))) next.splice(tokIdx - 1, 1);
+    const after = next[tokIdx];
+    if (before !== undefined && (before === "\n" || /^\s+$/.test(before))) {
+      next.splice(tokIdx - 1, 1);
+    } else if (after !== undefined && (after === "\n" || /^\s+$/.test(after))) {
+      next.splice(tokIdx, 1);
+    }
   } else if (op === "space") {
     next.splice(tokIdx + 1, 0, " ");
   } else if (op === "newline") {
