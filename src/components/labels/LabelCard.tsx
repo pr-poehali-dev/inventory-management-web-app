@@ -158,13 +158,15 @@ export default function LabelCard({
   }
 
   // Small variants
+  const w = is30 ? "60mm" : "65mm";
+  const h = is30 ? "26mm" : "29mm";
   const p = "1.5mm";
 
   if (fields.bigPrice) {
     return (
       <div
         className="label-card border border-gray-300 bg-white"
-        style={{ width: "100%", height: "100%", padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {fields.shopName && (
           <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
@@ -212,7 +214,7 @@ export default function LabelCard({
   return (
     <div
       className="label-card border border-gray-300 bg-white flex flex-col"
-      style={{ width: "100%", height: "100%", padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
+      style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}
     >
       {fields.shopName && (
         <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000" }}>

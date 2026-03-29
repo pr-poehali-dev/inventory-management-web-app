@@ -86,9 +86,6 @@ export default function Labels() {
   const isLarge = size === "large";
   const perPage = isLarge ? 9 : size === "small20" ? 20 : 30;
   const cols = isLarge ? 3 : size === "small20" ? 4 : 5;
-  const rows = isLarge ? 3 : size === "small20" ? 5 : 6;
-  const workH = isLarge ? 194 : 281;
-  const rowH = `${Math.floor(workH / rows)}mm`;
   const totalPages = Math.ceil(copies / perPage);
   // Размер листа для предпросмотра
   const pagePreviewW = isLarge ? "297mm" : "210mm";
@@ -218,7 +215,6 @@ export default function Labels() {
                         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
                         display: "grid",
                         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                        gridAutoRows: rowH,
                         gap: "2mm",
                         alignContent: "start",
                         transform: `scale(${sheetScale})`,
