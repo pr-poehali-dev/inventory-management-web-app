@@ -32,7 +32,9 @@ const LABEL_SIZES: Record<LabelSize, { w: number; h: number; thermo?: boolean }>
 export default function Labels() {
   const saved = loadSettings();
 
-  const [size, setSize] = useState<LabelSize>(saved?.size ?? "large");
+  const validSizes: LabelSize[] = ["large", "small", "thermo58x40", "thermo58x30", "thermo40x25"];
+  const savedSize: LabelSize = validSizes.includes(saved?.size) ? saved.size : "large";
+  const [size, setSize] = useState<LabelSize>(savedSize);
   const [copies, setCopies] = useState<number>(saved?.copies ?? 9);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [fields, setFields] = useState<LabelFields>(saved?.fields ?? {
