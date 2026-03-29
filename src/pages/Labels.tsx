@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import LabelCard from "@/components/labels/LabelCard";
 import PrintSheet from "@/components/labels/PrintSheet";
@@ -93,18 +93,41 @@ export default function Labels() {
   // Размер листа для предпросмотра
   const pagePreviewW = isLarge ? "297mm" : "210mm";
   const pagePreviewH = isLarge ? "210mm" : "297mm";
-  // Масштаб листа в предпросмотре
-  const sheetScale = isLarge ? 0.55 : 0.45;
-  const sheetMarginBottom = isLarge ? "-95mm" : "-160mm";
+  const pagePxW = isLarge ? 297 * 3.7795 : 210 * 3.7795;
+  const pagePxH = isLarge ? 210 * 3.7795 : 297 * 3.7795;
 
-  // Масштаб одного ценника: вписываем реальный мм-размер в контейнер ~600×350px
-  const labelMm = LABEL_SIZES[size];
+  // Ref на контейнер предпросмотра для динамического масштаба
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 500 });
+
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      setContainerSize({ w: el.clientWidth, h: el.clientHeight });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const PX_PER_MM = 3.7795;
+  // Масштаб листа — вписываем в контейнер с отступом 48px
+  const sheetScale = Math.min(
+    (containerSize.w - 48) / pagePxW,
+    (containerSize.h - 48) / pagePxH,
+    1
+  );
+  const sheetMarginBottom = `-${pagePxH * (1 - sheetScale) + 24}px`;
+
+  // Масштаб одного ценника
+  const labelMm = LABEL_SIZES[size];
   const labelPxW = labelMm.w * PX_PER_MM;
   const labelPxH = labelMm.h * PX_PER_MM;
-  const maxW = 560;
-  const maxH = 320;
-  const singleScale = Math.min(maxW / labelPxW, maxH / labelPxH, 1.8);
+  const singleScale = Math.min(
+    (containerSize.w - 80) / labelPxW,
+    (containerSize.h - 80) / labelPxH,
+    2.5
+  );
 
   return (
     <>
@@ -163,7 +186,8 @@ export default function Labels() {
           </div>
 
           <div
-            className="flex-1 overflow-auto scrollbar-thin rounded-lg border border-border flex items-center justify-center"
+            ref={previewRef}
+            className="flex-1 overflow-hidden scrollbar-thin rounded-lg border border-border flex items-center justify-center"
             style={{ background: "hsl(220 14% 12%)" }}
           >
             {previewMode === "single" ? (
@@ -178,7 +202,7 @@ export default function Labels() {
                 <LabelCard data={data} fields={fields} size={size} labelStyle={labelStyle} />
               </div>
             ) : (
-              <div className="p-6 flex flex-col items-center gap-4 w-full">
+              <div className="flex flex-col items-center" style={{ gap: `${pagePxH * sheetScale + 16}px`, paddingTop: "24px", paddingBottom: "24px" }}>
                 {Array.from({ length: totalPages }).map((_, pi) => {
                   const start = pi * perPage;
                   const count = Math.min(perPage, copies - start);
@@ -186,8 +210,8 @@ export default function Labels() {
                     <div
                       key={pi}
                       style={{
-                        width: pagePreviewW,
-                        height: pagePreviewH,
+                        width: `${pagePxW}px`,
+                        height: `${pagePxH}px`,
                         background: "#fff",
                         padding: "8mm",
                         boxSizing: "border-box",
@@ -198,8 +222,9 @@ export default function Labels() {
                         gap: "2mm",
                         alignContent: "start",
                         transform: `scale(${sheetScale})`,
-                        transformOrigin: "top center",
-                        marginBottom: sheetMarginBottom,
+                        transformOrigin: "top left",
+                        marginBottom: `-${pagePxH * (1 - sheetScale)}px`,
+                        marginRight: `-${pagePxW * (1 - sheetScale)}px`,
                         flexShrink: 0,
                       }}
                     >
@@ -209,7 +234,6 @@ export default function Labels() {
                     </div>
                   );
                 })}
-                <div style={{ height: "20px" }} />
               </div>
             )}
           </div>
