@@ -1,16 +1,18 @@
 import LabelCard from "./LabelCard";
-import type { LabelData, LabelFields, LabelSize } from "./types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
 
 export default function PrintSheet({
   data,
   fields,
   size,
   copies,
+  labelStyle,
 }: {
   data: LabelData;
   fields: LabelFields;
   size: LabelSize;
   copies: number;
+  labelStyle: LabelStyle;
 }) {
   const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
   const total = copies;
@@ -41,7 +43,7 @@ export default function PrintSheet({
             }}
           >
             {Array.from({ length: count }).map((_, i) => (
-              <LabelCard key={i} data={data} fields={fields} size={size} />
+              <LabelCard key={i} data={data} fields={fields} size={size} labelStyle={labelStyle} />
             ))}
           </div>
         );

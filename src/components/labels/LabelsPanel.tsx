@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import type { LabelData, LabelFields, LabelSize } from "./types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
 
 const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
   { id: "large", label: "Большой", sub: "9 на листе А4" },
@@ -17,6 +17,42 @@ const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean 
   { key: "bigPrice", label: "Крупная цена (1/4 ценника)", onlyLarge: true },
 ];
 
+const fontOptions: { value: string; label: string }[] = [
+  { value: "'Barlow Condensed', Arial Narrow, sans-serif", label: "Barlow Condensed" },
+  { value: "'Oswald', Arial Narrow, sans-serif", label: "Oswald" },
+  { value: "'Anton', Impact, sans-serif", label: "Anton" },
+  { value: "'Black Han Sans', sans-serif", label: "Black Han Sans" },
+  { value: "Arial, sans-serif", label: "Arial" },
+  { value: "Impact, sans-serif", label: "Impact" },
+];
+
+function Slider({ label, value, min, max, step, onChange }: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-foreground mono">{value.toFixed(1)}×</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-primary"
+      />
+    </div>
+  );
+}
+
 export default function LabelsPanel({
   size,
   setSize,
@@ -26,6 +62,8 @@ export default function LabelsPanel({
   toggleField,
   data,
   setData,
+  labelStyle,
+  setLabelStyle,
   onPrint,
 }: {
   size: LabelSize;
@@ -36,6 +74,8 @@ export default function LabelsPanel({
   toggleField: (key: keyof LabelFields) => void;
   data: LabelData;
   setData: (fn: (d: LabelData) => LabelData) => void;
+  labelStyle: LabelStyle;
+  setLabelStyle: (fn: (s: LabelStyle) => LabelStyle) => void;
   onPrint: () => void;
 }) {
   const perPage = size === "large" ? 9 : size === "small20" ? 20 : 30;
@@ -86,6 +126,53 @@ export default function LabelsPanel({
             </button>
           ))}
       </div>
+
+      {/* Price style — only for large + bigPrice */}
+      {size === "large" && fields.bigPrice && (
+        <div className="stat-card space-y-3">
+          <div className="section-title mb-1">Стиль цены</div>
+
+          <Slider
+            label="Ширина цифр"
+            value={labelStyle.priceScaleX}
+            min={0.5}
+            max={3}
+            step={0.1}
+            onChange={(v) => setLabelStyle((s) => ({ ...s, priceScaleX: v }))}
+          />
+          <Slider
+            label="Высота цифр"
+            value={labelStyle.priceScaleY}
+            min={0.5}
+            max={3}
+            step={0.1}
+            onChange={(v) => setLabelStyle((s) => ({ ...s, priceScaleY: v }))}
+          />
+
+          <div>
+            <div className="text-xs text-muted-foreground mb-2">Шрифт цены</div>
+            <div className="flex flex-col gap-1.5">
+              {fontOptions.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setLabelStyle((s) => ({ ...s, priceFont: f.value }))}
+                  className="w-full text-left px-3 py-2 rounded-lg border transition-all"
+                  style={{
+                    fontFamily: f.value,
+                    fontWeight: 900,
+                    fontSize: "15px",
+                    background: labelStyle.priceFont === f.value ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--muted))",
+                    borderColor: labelStyle.priceFont === f.value ? "hsl(var(--wms-blue) / 0.5)" : "hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  {f.label} — 3 200
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Data editor */}
       <div className="stat-card space-y-3">

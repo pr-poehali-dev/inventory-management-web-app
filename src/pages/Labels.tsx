@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import LabelCard from "@/components/labels/LabelCard";
 import PrintSheet from "@/components/labels/PrintSheet";
 import LabelsPanel from "@/components/labels/LabelsPanel";
-import type { LabelData, LabelFields, LabelSize } from "@/components/labels/types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle } from "@/components/labels/types";
 
 export default function Labels() {
   const [size, setSize] = useState<LabelSize>("large");
@@ -24,6 +24,11 @@ export default function Labels() {
     article: "КВП-6-305",
     price: "3 200",
     barcode: "460708636012",
+  });
+  const [labelStyle, setLabelStyle] = useState<LabelStyle>({
+    priceScaleX: 1.0,
+    priceScaleY: 1.0,
+    priceFont: "'Barlow Condensed', Arial Narrow, sans-serif",
   });
 
   const toggleField = (key: keyof LabelFields) =>
@@ -60,7 +65,7 @@ export default function Labels() {
     <>
       {/* Hidden print portal */}
       <div id="print-portal" style={{ display: "none", position: "fixed", inset: 0, zIndex: 9999, background: "#fff" }}>
-        <PrintSheet data={data} fields={fields} size={size} copies={copies} />
+        <PrintSheet data={data} fields={fields} size={size} copies={copies} labelStyle={labelStyle} />
       </div>
 
       <div className="flex gap-5 h-full">
@@ -74,6 +79,8 @@ export default function Labels() {
           toggleField={toggleField}
           data={data}
           setData={setData}
+          labelStyle={labelStyle}
+          setLabelStyle={setLabelStyle}
           onPrint={handlePrint}
         />
 
@@ -121,7 +128,7 @@ export default function Labels() {
                     }}
                   >
                     {Array.from({ length: count }).map((_, i) => (
-                      <LabelCard key={i} data={data} fields={fields} size={size} />
+                      <LabelCard key={i} data={data} fields={fields} size={size} labelStyle={labelStyle} />
                     ))}
                   </div>
                 );

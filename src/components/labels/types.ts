@@ -10,6 +10,12 @@ export interface LabelFields {
   bigPrice: boolean;
 }
 
+export interface LabelStyle {
+  priceScaleX: number;
+  priceScaleY: number;
+  priceFont: string;
+}
+
 export interface LabelData {
   shopName: string;
   productName: string;

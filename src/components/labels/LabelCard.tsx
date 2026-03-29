@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import JsBarcode from "jsbarcode";
-import type { LabelData, LabelFields, LabelSize } from "./types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
 
 // ─── Barcode ──────────────────────────────────────────────────────────────────
 
@@ -28,16 +28,50 @@ export function Barcode({ value, height = 32, fontSize = 8 }: { value: string; h
   return <svg ref={ref} className="w-full" />;
 }
 
+// ─── Big Price SVG ────────────────────────────────────────────────────────────
+
+function BigPriceSvg({ price, style }: { price: string; style: LabelStyle }) {
+  const { priceScaleX, priceScaleY, priceFont } = style;
+  // viewBox width controls horizontal stretch: smaller = wider chars
+  const vbW = Math.round(300 / priceScaleX);
+  // viewBox height controls vertical stretch: smaller = taller chars
+  const vbH = Math.round(106 / priceScaleY);
+
+  return (
+    <svg
+      width="44mm"
+      height="28mm"
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      preserveAspectRatio="none"
+      style={{ display: "block" }}
+    >
+      <text
+        x={vbW}
+        y={vbH - 6}
+        textAnchor="end"
+        fontFamily={priceFont}
+        fontWeight="900"
+        fill="#000"
+        fontSize={vbH - 6}
+      >
+        {price}
+      </text>
+    </svg>
+  );
+}
+
 // ─── LabelCard ────────────────────────────────────────────────────────────────
 
 export default function LabelCard({
   data,
   fields,
   size,
+  labelStyle,
 }: {
   data: LabelData;
   fields: LabelFields;
   size: LabelSize;
+  labelStyle: LabelStyle;
 }) {
   const isLarge = size === "large";
   const is30 = size === "small30";
@@ -75,19 +109,7 @@ export default function LabelCard({
             </div>
             {fields.price && (
               <div style={{ width: "44mm", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
-                <svg width="44mm" height="28mm" viewBox="0 0 300 106" preserveAspectRatio="xMaxYMax meet" style={{ display: "block", overflow: "visible" }}>
-                  <text
-                    x="300"
-                    y="100"
-                    textAnchor="end"
-                    fontFamily="'Barlow Condensed', Arial Narrow, sans-serif"
-                    fontWeight="900"
-                    fill="#000"
-                    fontSize="100"
-                  >
-                    {data.price}
-                  </text>
-                </svg>
+                <BigPriceSvg price={data.price} style={labelStyle} />
                 <div style={{ fontSize: "11pt", fontWeight: 700, color: "#000", lineHeight: 1 }}>₽</div>
               </div>
             )}
