@@ -13,17 +13,20 @@ import Users from "@/pages/Users";
 
 const queryClient = new QueryClient();
 
-const pages: Record<string, React.ReactNode> = {
-  dashboard: <Dashboard />,
-  receiving: <Receiving />,
-  warehouse: <Warehouse />,
-  reports: <Reports />,
-  sync: <Sync />,
-  users: <Users />,
-};
-
 const App = () => {
   const [page, setPage] = useState("dashboard");
+
+  const renderPage = () => {
+    switch (page) {
+      case "dashboard": return <Dashboard />;
+      case "receiving": return <Receiving />;
+      case "warehouse": return <Warehouse />;
+      case "reports": return <Reports />;
+      case "sync": return <Sync />;
+      case "users": return <Users />;
+      default: return <Dashboard />;
+    }
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -31,7 +34,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <Layout activePage={page} onNavigate={setPage}>
-          {pages[page] ?? <Dashboard />}
+          {renderPage()}
         </Layout>
       </TooltipProvider>
     </QueryClientProvider>
