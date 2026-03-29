@@ -162,20 +162,24 @@ export default function LabelCard({
     );
   }
 
-  // Thermo variant — точный размер этикетки, без рамки
+  // Thermo variant — закруглённые углы, штрихкод 30% высоты
   if (isThermo) {
     const ts = thermoSizes[size] ?? { w: 58, h: 40 };
     const tw = `${ts.w}mm`;
     const th = `${ts.h}mm`;
     const isNarrow = ts.h <= 30;
     const tp = isNarrow ? "1mm" : "1.5mm";
+    // Штрихкод: 30% высоты этикетки в пикселях (1мм ≈ 3.78px)
+    const barcodeH = Math.round(ts.h * 0.30 * 3.78);
+    // Шрифт значения штрихкода: крупный и чёткий
+    const barcodeFontSize = isNarrow ? 7 : 9;
     return (
       <div
         className="label-card bg-white"
-        style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "none" }}
+        style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid #ccc", borderRadius: "2mm" }}
       >
         {fields.shopName && (
-          <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #000", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
+          <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.3mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
             {data.shopName}
           </div>
         )}
@@ -187,11 +191,11 @@ export default function LabelCard({
         <div style={{ display: "flex", flex: 1, gap: "1mm", minHeight: 0, alignItems: "flex-end" }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 0 }}>
             {fields.barcode && (
-              <div style={{ marginBottom: "0.5mm" }}>
-                <Barcode value={data.barcode} height={isNarrow ? 10 : 14} fontSize={4} />
+              <div>
+                <Barcode value={data.barcode} height={barcodeH} fontSize={barcodeFontSize} />
               </div>
             )}
-            {fields.article && <div style={{ fontSize: "4.5pt", color: "#333" }}>Арт: {data.article}</div>}
+            {fields.article && <div style={{ fontSize: "4.5pt", color: "#333", marginTop: "0.3mm" }}>Арт: {data.article}</div>}
             {fields.date && <div style={{ fontSize: "4.5pt", color: "#333" }}>{data.date}</div>}
           </div>
           {fields.price && (

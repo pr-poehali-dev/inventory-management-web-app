@@ -178,7 +178,7 @@ export default function Labels() {
                 }}
               >
                 <Icon name="ScanBarcode" size={14} />
-                Ценник
+                {isThermo ? "Этикетка" : "Ценник"}
               </button>
               <button
                 onClick={() => setPreviewMode("sheet")}
@@ -189,16 +189,16 @@ export default function Labels() {
                   boxShadow: previewMode === "sheet" ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
                 }}
               >
-                <Icon name="LayoutGrid" size={14} />
-                На листе
+                <Icon name={isThermo ? "AlignJustify" : "LayoutGrid"} size={14} />
+                {isThermo ? "Лента" : "На листе"}
               </button>
             </div>
             <div className="text-xs text-muted-foreground">
-              {previewMode === "sheet"
-                ? isThermo
-                  ? `${copies} шт. · термолента`
-                  : `${copies} шт. · ${totalPages} стр.`
-                : `${labelMm.w}×${labelMm.h} мм`}
+              {isThermo
+                ? `${labelMm.w}×${labelMm.h} мм · ${copies} шт.`
+                : previewMode === "sheet"
+                  ? `${copies} шт. · ${totalPages} стр.`
+                  : `${labelMm.w}×${labelMm.h} мм`}
             </div>
           </div>
 
