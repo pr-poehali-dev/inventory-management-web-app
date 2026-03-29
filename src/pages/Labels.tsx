@@ -13,6 +13,7 @@ interface LabelFields {
   article: boolean;
   price: boolean;
   barcode: boolean;
+  bigPrice: boolean;
 }
 
 interface LabelData {
@@ -65,6 +66,52 @@ function LabelCard({
   const is30 = size === "small30";
 
   if (isLarge) {
+    if (fields.bigPrice) {
+      // Layout: left 50% = info column, right 50% = big price block
+      return (
+        <div
+          className="label-card border border-gray-300 bg-white"
+          style={{ width: "91mm", height: "62mm", padding: "3mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column" }}
+        >
+          {fields.shopName && (
+            <div style={{ fontSize: "9pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "1.5mm", marginBottom: "1.5mm", color: "#000", flexShrink: 0 }}>
+              {data.shopName}
+            </div>
+          )}
+          <div style={{ display: "flex", flex: 1, gap: "2mm", minHeight: 0 }}>
+            {/* Left: name, article, date, barcode */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+              {fields.productName && (
+                <div style={{ fontSize: "9pt", fontWeight: 700, lineHeight: 1.2, color: "#000", marginBottom: "1mm" }}>
+                  {data.productName}
+                </div>
+              )}
+              {fields.article && (
+                <div style={{ fontSize: "7pt", color: "#555" }}>Арт: {data.article}</div>
+              )}
+              {fields.date && (
+                <div style={{ fontSize: "7pt", color: "#555" }}>{data.date}</div>
+              )}
+              {fields.barcode && (
+                <div style={{ marginTop: "auto" }}>
+                  <Barcode value={data.barcode} height={26} fontSize={6} />
+                </div>
+              )}
+            </div>
+            {/* Right: big price = ~1/4 of label area */}
+            {fields.price && (
+              <div style={{ width: "42mm", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderLeft: "0.5px solid #ccc", paddingLeft: "2mm", flexShrink: 0 }}>
+                <div style={{ fontSize: "28pt", fontWeight: 900, color: "#000", lineHeight: 1, textAlign: "center" }}>
+                  {data.price}
+                </div>
+                <div style={{ fontSize: "13pt", fontWeight: 700, color: "#000" }}>₽</div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className="label-card border border-gray-300 bg-white flex flex-col"
@@ -80,26 +127,26 @@ function LabelCard({
             {data.productName}
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "auto" }}>
-          <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: "auto", gap: "2mm" }}>
+          <div style={{ flex: 1 }}>
             {fields.article && (
               <div style={{ fontSize: "7.5pt", color: "#555" }}>Арт: {data.article}</div>
             )}
             {fields.date && (
               <div style={{ fontSize: "7.5pt", color: "#555" }}>{data.date}</div>
             )}
+            {fields.barcode && (
+              <div style={{ marginTop: "1mm" }}>
+                <Barcode value={data.barcode} height={28} fontSize={7} />
+              </div>
+            )}
           </div>
           {fields.price && (
-            <div style={{ fontSize: "20pt", fontWeight: 900, color: "#000", lineHeight: 1 }}>
+            <div style={{ fontSize: "20pt", fontWeight: 900, color: "#000", lineHeight: 1, flexShrink: 0, textAlign: "right" }}>
               {data.price} <span style={{ fontSize: "11pt" }}>₽</span>
             </div>
           )}
         </div>
-        {fields.barcode && (
-          <div style={{ marginTop: "1.5mm" }}>
-            <Barcode value={data.barcode} height={32} fontSize={7} />
-          </div>
-        )}
       </div>
     );
   }
@@ -208,6 +255,7 @@ export default function Labels() {
     article: true,
     price: true,
     barcode: true,
+    bigPrice: false,
   });
   const [data, setData] = useState<LabelData>({
     shopName: "Мой магазин",
@@ -244,13 +292,14 @@ export default function Labels() {
     }, 500);
   };
 
-  const fieldLabels: { key: keyof LabelFields; label: string }[] = [
+  const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean }[] = [
     { key: "shopName", label: "Название магазина" },
     { key: "productName", label: "Название товара" },
     { key: "date", label: "Дата" },
     { key: "article", label: "Артикул поставщика" },
     { key: "price", label: "Цена" },
     { key: "barcode", label: "Штрихкод" },
+    { key: "bigPrice", label: "Крупная цена (1/4 ценника)", onlyLarge: true },
   ];
 
   const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
@@ -292,7 +341,9 @@ export default function Labels() {
           {/* Fields toggle */}
           <div className="stat-card space-y-2">
             <div className="section-title mb-3">Поля ценника</div>
-            {fieldLabels.map(({ key, label }) => (
+            {fieldLabels
+              .filter(({ onlyLarge }) => !onlyLarge || size === "large")
+              .map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => toggleField(key)}
