@@ -14,7 +14,7 @@ const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean 
   { key: "article", label: "Артикул поставщика" },
   { key: "price", label: "Цена" },
   { key: "barcode", label: "Штрихкод" },
-  { key: "bigPrice", label: "Крупная цена (1/4 ценника)", onlyLarge: true },
+  { key: "bigPrice", label: "Крупная цена" },
 ];
 
 const fontOptions: { value: string; label: string }[] = [
@@ -127,8 +127,8 @@ export default function LabelsPanel({
           ))}
       </div>
 
-      {/* Price style — only for large + bigPrice */}
-      {size === "large" && fields.bigPrice && (
+      {/* Price style — when bigPrice enabled */}
+      {fields.bigPrice && (
         <div className="stat-card space-y-3">
           <div className="section-title mb-1">Стиль цены</div>
 

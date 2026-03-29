@@ -161,6 +161,58 @@ export default function LabelCard({
   const w = is30 ? "60mm" : "65mm";
   const h = is30 ? "26mm" : "29mm";
   const p = "1.5mm";
+  // SVG price block: ~half width, full height of bottom area
+  const svgW = is30 ? "28mm" : "30mm";
+  const svgH = is30 ? "14mm" : "16mm";
+
+  if (fields.bigPrice) {
+    return (
+      <div
+        className="label-card border border-gray-300 bg-white"
+        style={{ width: w, height: h, padding: p, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      >
+        {fields.shopName && (
+          <div style={{ fontSize: "5.5pt", fontWeight: 700, textAlign: "center", borderBottom: "0.5px solid #ccc", paddingBottom: "0.5mm", marginBottom: "0.5mm", color: "#000", flexShrink: 0 }}>
+            {data.shopName}
+          </div>
+        )}
+        {fields.productName && (
+          <div style={{ fontSize: "6pt", fontWeight: 700, lineHeight: 1.15, color: "#000", marginBottom: "0.5mm", flexShrink: 0 }}>
+            {data.productName}
+          </div>
+        )}
+        <div style={{ display: "flex", flex: 1, gap: "1mm", minHeight: 0, alignItems: "flex-end" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 0 }}>
+            {fields.barcode && (
+              <div style={{ marginBottom: "0.5mm" }}>
+                <Barcode value={data.barcode} height={is30 ? 12 : 14} fontSize={4} />
+              </div>
+            )}
+            {fields.article && <div style={{ fontSize: "5pt", color: "#555" }}>Арт: {data.article}</div>}
+            {fields.date && <div style={{ fontSize: "5pt", color: "#555" }}>{data.date}</div>}
+          </div>
+          {fields.price && (
+            <div style={{ width: svgW, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "flex-end" }}>
+              <svg width={svgW} height={svgH} viewBox="0 0 300 106" preserveAspectRatio="none" style={{ display: "block" }}>
+                <text
+                  x="300"
+                  y="100"
+                  textAnchor="end"
+                  fontFamily={labelStyle.priceFont}
+                  fontWeight="900"
+                  fill="#000"
+                  fontSize="100"
+                >
+                  {data.price}
+                </text>
+              </svg>
+              <div style={{ fontSize: "5pt", fontWeight: 700, color: "#000", lineHeight: 1 }}>₽</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
