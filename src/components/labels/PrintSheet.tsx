@@ -65,7 +65,6 @@ export default function PrintSheet({
 
   return (
     <>
-      <style>{`@media print { @page { size: ${pageW} ${pageH}; margin: 0; } }`}</style>
       <div id="print-area">
         {Array.from({ length: pages }).map((_, pi) => {
           const start = pi * (isThermo ? 1 : perPage);
