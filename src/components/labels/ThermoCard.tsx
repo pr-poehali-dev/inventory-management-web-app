@@ -79,7 +79,7 @@ function SelectionToolbar({
   defaultFs: number;
   defaultFw: number;
 }) {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; below: boolean } | null>(null);
   const [fs, setFs] = useState(defaultFs);
   const [fw, setFw] = useState(defaultFw);
 
@@ -92,7 +92,10 @@ function SelectionToolbar({
     if (!card.contains(range.commonAncestorContainer)) { setPos(null); return; }
     const rect = range.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
-    setPos({ top: rect.top - cardRect.top, left: rect.left - cardRect.left + rect.width / 2 });
+    const relTop = rect.top - cardRect.top;
+    const relBottom = rect.bottom - cardRect.top;
+    const below = relTop < 44;
+    setPos({ top: below ? relBottom : relTop, left: rect.left - cardRect.left + rect.width / 2, below });
     // Читаем стиль начала выделения
     const node = range.startContainer;
     const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
@@ -159,7 +162,7 @@ function SelectionToolbar({
     <div
       style={{
         position: "absolute",
-        top: pos.top - 38,
+        top: pos.below ? pos.top + 4 : pos.top - 38,
         left: pos.left,
         transform: "translateX(-50%)",
         background: "#1e293b",
