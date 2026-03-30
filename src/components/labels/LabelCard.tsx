@@ -149,7 +149,7 @@ export default function LabelCard({
     const th = `${ts.h}mm`;
     const isNarrow = ts.h <= 30;
     const tp = isNarrow ? "1mm" : "1.5mm";
-    const barcodeH = Math.round(ts.h * 0.30 * 3.78);
+    const barcodeH = Math.round(ts.h * 0.22 * 3.78);
     const barcodeFontSize = isNarrow ? 7 : 9;
     const defaultFs = labelStyle.thermoFontSize ?? 6;
     const defaultFw = labelStyle.thermoFontWeight ?? 700;
