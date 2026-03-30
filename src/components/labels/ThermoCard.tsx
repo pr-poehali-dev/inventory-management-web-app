@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { LabelData, LabelFields, ThermoWordStyle } from "./types";
 import { Barcode } from "./Barcode";
 import type { ThermoFieldKey } from "./WordSpans";
