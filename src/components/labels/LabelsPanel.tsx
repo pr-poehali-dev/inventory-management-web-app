@@ -424,6 +424,20 @@ export default function LabelsPanel({
         Печать / PDF
       </button>
 
+      {isThermo && (
+        <div className="bg-muted rounded-lg px-3 py-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <Icon name="Info" size={13} />
+            Настройка термопринтера (один раз)
+          </div>
+          <ol className="text-xs text-muted-foreground space-y-1 list-none">
+            <li className="flex gap-2"><span className="text-foreground font-medium flex-shrink-0">1.</span>Панель управления → Устройства и принтеры</li>
+            <li className="flex gap-2"><span className="text-foreground font-medium flex-shrink-0">2.</span>ПКМ на термопринтере → Свойства принтера → Настройки печати</li>
+            <li className="flex gap-2"><span className="text-foreground font-medium flex-shrink-0">3.</span>Размер бумаги: выбери <span className="text-foreground font-medium">{sizeOptions.find(s => s.id === size)?.label.replace("Термо ", "")}</span></li>
+            <li className="flex gap-2"><span className="text-foreground font-medium flex-shrink-0">4.</span>Сохрани — теперь печать в один клик</li>
+          </ol>
+        </div>
+      )}
 
     </div>
   );
