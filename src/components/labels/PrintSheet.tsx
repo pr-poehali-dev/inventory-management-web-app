@@ -37,7 +37,7 @@ export default function PrintSheet({
   const thermoMmPre: Record<string, { w: number; h: number }> = {
     thermo58x40: { w: 58, h: 40 },
     thermo58x30: { w: 58, h: 30 },
-    thermo40x25: { w: 40, h: 25 },
+    thermo43x25: { w: 43, h: 25 },
   };
   const preMm = thermoMmPre[size];
   const pageW = isThermoPre ? `${preMm?.w ?? 58}mm` : (isLarge ? "297mm" : "210mm");
@@ -47,7 +47,7 @@ export default function PrintSheet({
   const thermoMm: Record<string, { w: number; h: number }> = {
     thermo58x40: { w: 58, h: 40 },
     thermo58x30: { w: 58, h: 30 },
-    thermo40x25: { w: 40, h: 25 },
+    thermo43x25: { w: 43, h: 25 },
   };
   const labelMm = isThermo ? (thermoMm[size] ?? { w: 58, h: 40 }) : (isLarge ? { w: 91, h: 62 } : { w: 50, h: 35 });
   const pageMmW = isThermo ? labelMm.w : (isLarge ? 297 : 210);

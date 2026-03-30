@@ -7,7 +7,7 @@ const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
   { id: "small",       label: "Маленький 50×35 мм",  sub: "32 шт на листе А4" },
   { id: "thermo58x40", label: "Термо 58×40 мм",      sub: "термопринтер" },
   { id: "thermo58x30", label: "Термо 58×30 мм",      sub: "термопринтер" },
-  { id: "thermo40x25", label: "Термо 40×25 мм",      sub: "термопринтер" },
+  { id: "thermo43x25", label: "Термо 43×25 мм",      sub: "термопринтер" },
 ];
 
 const fieldLabels: { key: keyof LabelFields; label: string; onlyLarge?: boolean }[] = [

@@ -1,4 +1,4 @@
-export type LabelSize = "large" | "small" | "thermo58x40" | "thermo58x30" | "thermo40x25";
+export type LabelSize = "large" | "small" | "thermo58x40" | "thermo58x30" | "thermo43x25";
 
 export interface LabelFields {
   shopName: boolean;

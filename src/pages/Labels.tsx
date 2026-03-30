@@ -26,13 +26,13 @@ const LABEL_SIZES: Record<LabelSize, { w: number; h: number; thermo?: boolean }>
   small:        { w: 50,  h: 35 },
   thermo58x40:  { w: 58,  h: 40,  thermo: true },
   thermo58x30:  { w: 58,  h: 30,  thermo: true },
-  thermo40x25:  { w: 40,  h: 25,  thermo: true },
+  thermo43x25:  { w: 43,  h: 25,  thermo: true },
 };
 
 export default function Labels() {
   const saved = loadSettings();
 
-  const validSizes: LabelSize[] = ["large", "small", "thermo58x40", "thermo58x30", "thermo40x25"];
+  const validSizes: LabelSize[] = ["large", "small", "thermo58x40", "thermo58x30", "thermo43x25"];
   const savedSize: LabelSize = validSizes.includes(saved?.size) ? saved.size : "large";
   const [size, setSize] = useState<LabelSize>(savedSize);
   const [copies, setCopies] = useState<number>(saved?.copies ?? 9);
@@ -83,7 +83,7 @@ export default function Labels() {
     const thermoMm: Record<string, { w: number; h: number }> = {
       thermo58x40: { w: 58, h: 40 },
       thermo58x30: { w: 58, h: 30 },
-      thermo40x25: { w: 40, h: 25 },
+      thermo43x25: { w: 43, h: 25 },
     };
     const isThermo = size.startsWith("thermo");
     const mm = thermoMm[size];

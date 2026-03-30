@@ -58,7 +58,7 @@ export default function LabelCard({
   const thermoSizes: Record<string, { w: number; h: number }> = {
     thermo58x40: { w: 58, h: 40 },
     thermo58x30: { w: 58, h: 30 },
-    thermo40x25: { w: 40, h: 25 },
+    thermo43x25: { w: 43, h: 25 },
   };
 
   if (isLarge) {
