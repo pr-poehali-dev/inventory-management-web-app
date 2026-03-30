@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import InvoiceImport, { InvoiceRow } from "@/components/receiving/InvoiceImport";
+import InvoiceValidation from "@/components/receiving/InvoiceValidation";
+import EnrichmentImport from "@/components/receiving/EnrichmentImport";
+import MarkingImport from "@/components/receiving/MarkingImport";
 
 interface Document {
   id: string;
@@ -41,12 +44,20 @@ export default function Receiving() {
   const [barcode, setBarcode] = useState("");
   const [scanned, setScanned] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
+  const [showEnrich, setShowEnrich] = useState(false);
+  const [showMarking, setShowMarking] = useState(false);
 
   const handleScan = () => {
     if (barcode.trim()) {
       setScanned((prev) => [barcode.trim(), ...prev.slice(0, 4)]);
       setBarcode("");
     }
+  };
+
+  const updateDocRows = (rows: InvoiceRow[]) => {
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === selected ? { ...d, rows, items: rows.length } : d))
+    );
   };
 
   const handleImport = (rows: InvoiceRow[]) => {
@@ -80,6 +91,20 @@ export default function Receiving() {
           supplierName={selectedDoc?.supplier}
           onImport={handleImport}
           onClose={() => setShowImport(false)}
+        />
+      )}
+      {showEnrich && importedRows && (
+        <EnrichmentImport
+          rows={importedRows}
+          onEnriched={(rows) => { updateDocRows(rows); }}
+          onClose={() => setShowEnrich(false)}
+        />
+      )}
+      {showMarking && importedRows && (
+        <MarkingImport
+          rows={importedRows}
+          onApplied={(rows) => { updateDocRows(rows); }}
+          onClose={() => setShowMarking(false)}
         />
       )}
 
@@ -211,6 +236,15 @@ export default function Receiving() {
               </div>
             </div>
           </div>
+
+          {/* Validation panel */}
+          {importedRows && (
+            <InvoiceValidation
+              rows={importedRows}
+              onEnrich={() => setShowEnrich(true)}
+              onMarking={() => setShowMarking(true)}
+            />
+          )}
 
           {/* Items Table */}
           <div className="stat-card flex-1 overflow-hidden flex flex-col">
