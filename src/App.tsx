@@ -11,6 +11,7 @@ import Reports from "@/pages/Reports";
 import Sync from "@/pages/Sync";
 import Users from "@/pages/Users";
 import Labels from "@/pages/Labels";
+import WarehouseMap from "@/pages/WarehouseMap";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => {
       case "dashboard": return <Dashboard />;
       case "receiving": return <Receiving />;
       case "warehouse": return <Warehouse />;
+      case "warehouse-map": return <WarehouseMap />;
       case "labels": return <Labels />;
       case "reports": return <Reports />;
       case "sync": return <Sync />;

@@ -11,6 +11,7 @@ const navItems = [
   { id: "dashboard", label: "Дашборд", icon: "LayoutDashboard" },
   { id: "receiving", label: "Приёмка товара", icon: "PackagePlus" },
   { id: "warehouse", label: "Склад", icon: "Warehouse" },
+  { id: "warehouse-map", label: "Карта склада", icon: "Map" },
   { id: "labels", label: "Ценники и этикетки", icon: "Tag" },
   { id: "reports", label: "Отчёты и графики", icon: "BarChart3" },
   { id: "sync", label: "Синхронизация", icon: "RefreshCw" },

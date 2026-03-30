@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET warehouse structure",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"zones": [], "racks": [], "cells": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
