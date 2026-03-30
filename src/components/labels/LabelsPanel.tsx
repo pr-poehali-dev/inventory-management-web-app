@@ -238,7 +238,9 @@ export default function LabelsPanel({
           </button>
         </div>
         <div className="text-xs text-muted-foreground mt-2 text-center">
-          {Math.ceil(copies / perPage)} лист(а) А4
+          {isThermo
+            ? `${copies} этикеток`
+            : `${Math.ceil(copies / perPage)} лист(а) А4`}
         </div>
       </div>
 
