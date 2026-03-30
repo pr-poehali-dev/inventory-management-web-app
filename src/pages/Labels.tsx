@@ -90,16 +90,25 @@ export default function Labels() {
     const pageSize = isThermo && mm
       ? `${mm.w}mm ${mm.h}mm`
       : size === "large" ? "297mm 210mm" : "210mm 297mm";
-    const win = window.open("", "_blank", "width=900,height=700");
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;border:none;";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument!;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
       * { box-sizing: border-box; }
-      body { margin: 0; background: #fff; }
+      html, body { margin: 0; padding: 0; background: #fff; }
       @page { size: ${pageSize}; margin: 0; }
     </style></head><body>${content}</body></html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
+    doc.close();
+
+    iframe.onload = () => {
+      iframe.contentWindow!.focus();
+      iframe.contentWindow!.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    };
   };
 
   const isLarge = size === "large";
