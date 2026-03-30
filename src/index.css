@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.no-print-preview {
+  display: none;
+}
+@media print {
+  .no-print-preview {
+    display: block !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 220 16% 8%;

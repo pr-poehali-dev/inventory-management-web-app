@@ -79,18 +79,16 @@ export default function Labels() {
     style.id = "print-style";
     style.innerHTML = `
       @media print {
-        body > * { display: none !important; }
-        #print-portal { display: block !important; }
+        body > *:not(#print-portal) { display: none !important; }
       }
     `;
     document.head.appendChild(style);
-    const portal = document.getElementById("print-portal");
-    if (portal) portal.style.display = "block";
+    const cleanup = () => {
+      if (document.head.contains(style)) document.head.removeChild(style);
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
     window.print();
-    setTimeout(() => {
-      document.head.removeChild(style);
-      if (portal) portal.style.display = "none";
-    }, 500);
   };
 
   const isLarge = size === "large";
@@ -155,7 +153,7 @@ export default function Labels() {
 
   return (
     <>
-      <div id="print-portal" style={{ display: "none", position: "fixed", inset: 0, zIndex: 9999, background: "#fff" }}>
+      <div id="print-portal" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff" }} className="no-print-preview">
         <PrintSheet data={data} fields={fields} size={size} copies={copies} labelStyle={labelStyle} multiMode={multiMode} printItems={printItems} />
       </div>
 
