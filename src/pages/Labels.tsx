@@ -88,7 +88,7 @@ export default function Labels() {
     const isThermo = size.startsWith("thermo");
     const mm = thermoMm[size];
     const pageSize = isThermo && mm
-      ? `${mm.w}mm ${mm.h}mm`
+      ? `${mm.h}mm ${mm.w}mm`
       : size === "large" ? "297mm 210mm" : "210mm 297mm";
     const win = window.open("", "_blank", "width=900,height=700");
     if (!win) return;
