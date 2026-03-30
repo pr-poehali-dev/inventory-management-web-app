@@ -423,6 +423,13 @@ export default function LabelsPanel({
         <Icon name="Printer" size={17} />
         Печать / PDF
       </button>
+
+      {isThermo && (
+        <div className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2.5 leading-relaxed">
+          <span className="font-semibold text-foreground block mb-1">Для термопринтера:</span>
+          В диалоге печати → <span className="text-foreground font-medium">Другие настройки</span> → выбери размер бумаги <span className="text-foreground font-medium">{sizeOptions.find(s => s.id === size)?.label.replace("Термо ", "")}</span>
+        </div>
+      )}
     </div>
   );
 }
