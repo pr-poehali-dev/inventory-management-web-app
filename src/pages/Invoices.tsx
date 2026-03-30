@@ -30,6 +30,112 @@ const STATUS: Record<Invoice["status"], { text: string; cls: string; icon: strin
   error:  { text: "Ошибка",    cls: "badge-error",   icon: "AlertCircle" },
 };
 
+interface NewInvoiceForm {
+  supplier: string;
+  docNumber: string;
+  date: string;
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function NewInvoiceDialog({
+  onConfirm,
+  onClose,
+  nextId,
+}: {
+  onConfirm: (form: NewInvoiceForm) => void;
+  onClose: () => void;
+  nextId: string;
+}) {
+  const [form, setForm] = useState<NewInvoiceForm>({
+    supplier: "",
+    docNumber: "",
+    date: todayStr(),
+  });
+
+  const set = (k: keyof NewInvoiceForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div
+        className="w-full max-w-md rounded-xl border shadow-2xl overflow-hidden"
+        style={{ background: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "hsl(var(--border))" }}>
+          <div className="flex items-center gap-2">
+            <Icon name="FilePlus" size={18} className="text-primary" />
+            <span className="font-semibold text-foreground">Новая накладная</span>
+            <span className="mono text-xs text-muted-foreground">{nextId}</span>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <Icon name="X" size={18} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Поставщик <span className="text-destructive">*</span>
+            </label>
+            <input
+              autoFocus
+              value={form.supplier}
+              onChange={(e) => set("supplier", e.target.value)}
+              placeholder="Название организации или ИП..."
+              className="w-full rounded-lg border bg-muted text-sm px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              style={{ borderColor: "hsl(var(--border))" }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Номер документа поставщика
+            </label>
+            <input
+              value={form.docNumber}
+              onChange={(e) => set("docNumber", e.target.value)}
+              placeholder="Например: ТН-2024-0892 или УПД-56800..."
+              className="w-full rounded-lg border bg-muted text-sm px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              style={{ borderColor: "hsl(var(--border))" }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Дата накладной <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set("date", e.target.value)}
+              className="w-full rounded-lg border bg-muted text-sm px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              style={{ borderColor: "hsl(var(--border))", colorScheme: "dark" }}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: "hsl(var(--border))" }}>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={() => { if (form.supplier.trim() && form.date) onConfirm(form); }}
+            disabled={!form.supplier.trim() || !form.date}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
+            style={{ background: "hsl(var(--primary))", color: "#fff" }}
+          >
+            <Icon name="Check" size={15} />
+            Создать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Invoices() {
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [selectedId, setSelectedId] = useState(initialInvoices[0].id);
@@ -37,6 +143,9 @@ export default function Invoices() {
   const [showImport, setShowImport] = useState(false);
   const [showEnrich, setShowEnrich] = useState(false);
   const [showMarking, setShowMarking] = useState(false);
+  const [showNewDialog, setShowNewDialog] = useState(false);
+  const [editingHeader, setEditingHeader] = useState(false);
+  const [headerDraft, setHeaderDraft] = useState<{ supplier: string; docNumber: string; date: string }>({ supplier: "", docNumber: "", date: "" });
 
   const selected = invoices.find((inv) => inv.id === selectedId);
   const rows = selected?.rows ?? null;
@@ -58,20 +167,66 @@ export default function Invoices() {
     );
   };
 
+  const nextId = `НКЛ-${String(invoices.length + 1).padStart(4, "0")}`;
+
+  const handleCreateNew = (form: NewInvoiceForm) => {
+    const displayDate = new Date(form.date).toLocaleDateString("ru-RU");
+    const newInv: Invoice = {
+      id: nextId,
+      supplier: form.supplier,
+      date: displayDate,
+      items: 0,
+      status: "draft",
+      docNumber: form.docNumber || nextId,
+      rows: undefined,
+    };
+    setInvoices((prev) => [newInv, ...prev]);
+    setSelectedId(newInv.id);
+    setShowNewDialog(false);
+  };
+
   const handleImport = (newRows: InvoiceRow[]) => {
+    // Если накладная уже создана — просто обновляем строки
+    if (selected) {
+      updateRows(newRows);
+      return;
+    }
+    // Иначе создаём новую с дефолтными реквизитами
     const today = new Date().toLocaleDateString("ru-RU");
     const num = String(invoices.length + 1).padStart(4, "0");
     const newInv: Invoice = {
       id: `НКЛ-${num}`,
-      supplier: selected?.supplier ?? "Новый поставщик",
+      supplier: "Новый поставщик",
       date: today,
       items: newRows.length,
       status: "draft",
-      docNumber: `ИМП-${num}`,
+      docNumber: `НКЛ-${num}`,
       rows: newRows,
     };
     setInvoices((prev) => [newInv, ...prev]);
     setSelectedId(newInv.id);
+  };
+
+  const startEditHeader = () => {
+    if (!selected) return;
+    // Конвертируем русскую дату обратно в ISO для input[type=date]
+    const parts = selected.date.split(".");
+    const iso = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : todayStr();
+    setHeaderDraft({ supplier: selected.supplier, docNumber: selected.docNumber, date: iso });
+    setEditingHeader(true);
+  };
+
+  const saveHeader = () => {
+    if (!selected || !headerDraft.supplier.trim()) return;
+    const displayDate = new Date(headerDraft.date).toLocaleDateString("ru-RU");
+    setInvoices((prev) =>
+      prev.map((inv) =>
+        inv.id === selectedId
+          ? { ...inv, supplier: headerDraft.supplier, docNumber: headerDraft.docNumber, date: displayDate }
+          : inv
+      )
+    );
+    setEditingHeader(false);
   };
 
   const handleSendToReceiving = () => {
@@ -86,6 +241,13 @@ export default function Invoices() {
 
   return (
     <>
+      {showNewDialog && (
+        <NewInvoiceDialog
+          nextId={nextId}
+          onConfirm={handleCreateNew}
+          onClose={() => setShowNewDialog(false)}
+        />
+      )}
       {showImport && (
         <InvoiceImport
           supplierName={selected?.supplier}
@@ -115,12 +277,12 @@ export default function Invoices() {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Накладные</span>
             <button
-              onClick={() => setShowImport(true)}
+              onClick={() => setShowNewDialog(true)}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors"
               style={{ background: "hsl(var(--primary))", color: "#fff" }}
             >
-              <Icon name="FileUp" size={14} />
-              Загрузить
+              <Icon name="Plus" size={14} />
+              Новая
             </button>
           </div>
 
@@ -168,55 +330,120 @@ export default function Invoices() {
 
           {/* Шапка документа */}
           <div className="stat-card">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="mono text-lg font-bold text-primary">{selected?.id}</span>
-                  {selected && (
-                    <span className={STATUS[selected.status].cls}>{STATUS[selected.status].text}</span>
-                  )}
+            {editingHeader ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="mono text-sm font-bold text-primary">{selected?.id}</span>
+                  <span className="text-xs text-muted-foreground">— редактирование реквизитов</span>
                 </div>
-                <div className="text-base font-semibold mt-0.5 text-foreground">{selected?.supplier}</div>
-                <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                  <span>Документ: <span className="text-foreground font-medium">{selected?.docNumber}</span></span>
-                  <span>Дата: <span className="text-foreground font-medium">{selected?.date}</span></span>
-                  {rows && (
-                    <span>
-                      Сумма: <span className="text-primary font-mono font-semibold">{totalSum.toLocaleString("ru-RU")} ₽</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                <button
-                  onClick={() => setShowImport(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-                >
-                  <Icon name="FileUp" size={15} />
-                  {rows ? "Перезагрузить" : "Загрузить накладную"}
-                </button>
-                {rows && selected?.status !== "sent" && (
-                  <button
-                    onClick={handleSendToReceiving}
-                    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                    style={{ background: "hsl(var(--wms-green))", color: "#fff" }}
-                  >
-                    <Icon name="Send" size={15} />
-                    Передать в приёмку
-                  </button>
-                )}
-                {selected?.status === "sent" && (
-                  <div
-                    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium"
-                    style={{ background: "hsl(var(--wms-green) / 0.12)", color: "hsl(var(--wms-green))" }}
-                  >
-                    <Icon name="CheckCircle2" size={15} />
-                    Передана в приёмку
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-3 sm:col-span-1">
+                    <label className="block text-xs text-muted-foreground mb-1">Поставщик *</label>
+                    <input
+                      autoFocus
+                      value={headerDraft.supplier}
+                      onChange={(e) => setHeaderDraft((d) => ({ ...d, supplier: e.target.value }))}
+                      className="w-full rounded-md border bg-muted text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      style={{ borderColor: "hsl(var(--border))" }}
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">Номер документа</label>
+                    <input
+                      value={headerDraft.docNumber}
+                      onChange={(e) => setHeaderDraft((d) => ({ ...d, docNumber: e.target.value }))}
+                      className="w-full rounded-md border bg-muted text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      style={{ borderColor: "hsl(var(--border))" }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">Дата накладной *</label>
+                    <input
+                      type="date"
+                      value={headerDraft.date}
+                      onChange={(e) => setHeaderDraft((d) => ({ ...d, date: e.target.value }))}
+                      className="w-full rounded-md border bg-muted text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      style={{ borderColor: "hsl(var(--border))", colorScheme: "dark" }}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={saveHeader}
+                    disabled={!headerDraft.supplier.trim()}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-40"
+                    style={{ background: "hsl(var(--primary))", color: "#fff" }}
+                  >
+                    <Icon name="Check" size={14} />
+                    Сохранить
+                  </button>
+                  <button
+                    onClick={() => setEditingHeader(false)}
+                    className="px-4 py-1.5 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Отмена
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="mono text-lg font-bold text-primary">{selected?.id}</span>
+                    {selected && (
+                      <span className={STATUS[selected.status].cls}>{STATUS[selected.status].text}</span>
+                    )}
+                    <button
+                      onClick={startEditHeader}
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      title="Редактировать реквизиты"
+                    >
+                      <Icon name="Pencil" size={12} />
+                      Изменить
+                    </button>
+                  </div>
+                  <div className="text-base font-semibold mt-0.5 text-foreground">{selected?.supplier}</div>
+                  <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
+                    <span>Документ: <span className="text-foreground font-medium">{selected?.docNumber}</span></span>
+                    <span>Дата: <span className="text-foreground font-medium">{selected?.date}</span></span>
+                    {rows && (
+                      <span>
+                        Сумма: <span className="text-primary font-mono font-semibold">{totalSum.toLocaleString("ru-RU")} ₽</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                  <button
+                    onClick={() => setShowImport(true)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                  >
+                    <Icon name="FileUp" size={15} />
+                    {rows ? "Перезагрузить" : "Загрузить накладную"}
+                  </button>
+                  {rows && selected?.status !== "sent" && (
+                    <button
+                      onClick={handleSendToReceiving}
+                      className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                      style={{ background: "hsl(var(--wms-green))", color: "#fff" }}
+                    >
+                      <Icon name="Send" size={15} />
+                      Передать в приёмку
+                    </button>
+                  )}
+                  {selected?.status === "sent" && (
+                    <div
+                      className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium"
+                      style={{ background: "hsl(var(--wms-green) / 0.12)", color: "hsl(var(--wms-green))" }}
+                    >
+                      <Icon name="CheckCircle2" size={15} />
+                      Передана в приёмку
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Пустое состояние — накладная не загружена */}
