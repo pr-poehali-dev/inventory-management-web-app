@@ -225,7 +225,7 @@ export function ThermoCard({
     <div
       ref={cardRef}
       className="label-card bg-white"
-      style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "visible", border: "1px solid #ccc", borderRadius: "2mm", position: "relative" }}
+      style={{ width: tw, height: th, padding: tp, boxSizing: "border-box", fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid #ccc", borderRadius: "2mm", position: "relative" }}
     >
       {editable && <SelectionToolbar cardRef={cardRef} defaultFs={defaultFs} defaultFw={defaultFw} />}
 
@@ -242,7 +242,9 @@ export function ThermoCard({
       <div style={{ display: "flex", flex: 1, gap: "1mm", minHeight: 0, alignItems: "flex-end" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 0 }}>
           {fields.barcode && (
-            <div><Barcode value={data.barcode} height={barcodeH} fontSize={barcodeFontSize} /></div>
+            <div style={{ overflow: "hidden", flexShrink: 0, maxWidth: "100%" }}>
+              <Barcode value={data.barcode} height={barcodeH} fontSize={barcodeFontSize} />
+            </div>
           )}
           {fields.article && (
             <div style={{ ...baseStyle("#333"), marginTop: "0.3mm", display: "flex", alignItems: "baseline", gap: "2px" }}>
