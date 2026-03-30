@@ -79,7 +79,11 @@ export default function Layout({ children, activePage, onNavigate }: LayoutProps
 
         {/* Bottom */}
         <div className="px-2 py-4 border-t border-border space-y-1">
-          <button className="nav-item w-full text-left" title={collapsed ? "Настройки" : undefined}>
+          <button
+            onClick={() => onNavigate("settings")}
+            className={`nav-item w-full text-left ${activePage === "settings" ? "active" : ""}`}
+            title={collapsed ? "Настройки" : undefined}
+          >
             <Icon name="Settings" size={18} className="flex-shrink-0" />
             {!collapsed && <span>Настройки</span>}
           </button>
@@ -111,7 +115,7 @@ export default function Layout({ children, activePage, onNavigate }: LayoutProps
         <header className="flex items-center gap-4 px-6 py-3 border-b border-border bg-card">
           <div>
             <h1 className="text-base font-semibold text-foreground">
-              {navItems.find((n) => n.id === activePage)?.label}
+              {navItems.find((n) => n.id === activePage)?.label ?? (activePage === "settings" ? "Настройки" : "")}
             </h1>
             <div className="text-xs text-muted-foreground">
               {new Date().toLocaleDateString("ru-RU", {

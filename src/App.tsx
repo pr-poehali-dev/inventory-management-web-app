@@ -13,6 +13,7 @@ import Sync from "@/pages/Sync";
 import Users from "@/pages/Users";
 import Labels from "@/pages/Labels";
 import WarehouseMap from "@/pages/WarehouseMap";
+import Settings from "@/pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => {
       case "reports": return <Reports />;
       case "sync": return <Sync />;
       case "users": return <Users />;
+      case "settings": return <Settings />;
       default: return <Dashboard />;
     }
   };
