@@ -74,21 +74,23 @@ export default function Labels() {
   const toggleField = (key: keyof LabelFields) =>
     setFields((f) => ({ ...f, [key]: !f[key] }));
 
+  const printRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
-    const style = document.createElement("style");
-    style.id = "print-style";
-    style.innerHTML = `
-      @media print {
-        body > *:not(#print-portal) { display: none !important; }
-      }
-    `;
-    document.head.appendChild(style);
-    const cleanup = () => {
-      if (document.head.contains(style)) document.head.removeChild(style);
-      window.removeEventListener("afterprint", cleanup);
-    };
-    window.addEventListener("afterprint", cleanup);
-    window.print();
+    const el = printRef.current;
+    if (!el) return;
+    const content = el.innerHTML;
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff; }
+      @page { margin: 0; }
+      @media print { body { margin: 0; } }
+    </style></head><body>${content}</body></html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 500);
   };
 
   const isLarge = size === "large";
@@ -153,7 +155,7 @@ export default function Labels() {
 
   return (
     <>
-      <div id="print-portal" style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff" }} className="no-print-preview">
+      <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
         <PrintSheet data={data} fields={fields} size={size} copies={copies} labelStyle={labelStyle} multiMode={multiMode} printItems={printItems} />
       </div>
 
