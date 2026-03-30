@@ -80,13 +80,22 @@ export default function Labels() {
     const el = printRef.current;
     if (!el) return;
     const content = el.innerHTML;
+    const thermoMm: Record<string, { w: number; h: number }> = {
+      thermo58x40: { w: 58, h: 40 },
+      thermo58x30: { w: 58, h: 30 },
+      thermo40x25: { w: 40, h: 25 },
+    };
+    const isThermo = size.startsWith("thermo");
+    const mm = thermoMm[size];
+    const pageSize = isThermo && mm
+      ? `${mm.w}mm ${mm.h}mm`
+      : size === "large" ? "297mm 210mm" : "210mm 297mm";
     const win = window.open("", "_blank", "width=900,height=700");
     if (!win) return;
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
       * { box-sizing: border-box; }
       body { margin: 0; background: #fff; }
-      @page { margin: 0; }
-      @media print { body { margin: 0; } }
+      @page { size: ${pageSize}; margin: 0; }
     </style></head><body>${content}</body></html>`);
     win.document.close();
     win.focus();
