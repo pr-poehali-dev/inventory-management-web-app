@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import LabelCard from "@/components/labels/LabelCard";
 import PrintSheet from "@/components/labels/PrintSheet";
 import LabelsPanel from "@/components/labels/LabelsPanel";
-import type { LabelData, LabelFields, LabelSize, LabelStyle } from "@/components/labels/types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle, PrintItem } from "@/components/labels/types";
 
 type PreviewMode = "single" | "sheet";
 
@@ -63,11 +63,13 @@ export default function Labels() {
     thermoFields: {},
     thermoWords: {},
   });
+  const [multiMode, setMultiMode] = useState<boolean>(saved?.multiMode ?? false);
+  const [printItems, setPrintItems] = useState<PrintItem[]>(saved?.printItems ?? []);
 
   // Сохраняем при каждом изменении
   useEffect(() => {
-    saveSettings({ size, copies, fields, data, labelStyle });
-  }, [size, copies, fields, data, labelStyle]);
+    saveSettings({ size, copies, fields, data, labelStyle, multiMode, printItems });
+  }, [size, copies, fields, data, labelStyle, multiMode, printItems]);
 
   const toggleField = (key: keyof LabelFields) =>
     setFields((f) => ({ ...f, [key]: !f[key] }));
@@ -108,7 +110,10 @@ export default function Labels() {
   const colsCalc = isThermo ? 1 : Math.floor((usableW + gapMm) / (labelMmW + gapMm));
   const rowsCalc = isThermo ? 1 : Math.floor((usableH + gapMm) / (labelMmH + gapMm));
   const perPage = isLarge ? 9 : colsCalc * rowsCalc;
-  const totalPages = Math.ceil(copies / perPage);
+  const totalCopies = multiMode
+    ? printItems.reduce((s, it) => s + it.copies, 0)
+    : copies;
+  const totalPages = isThermo ? totalCopies : Math.ceil(totalCopies / perPage);
   const pagePxW = pageMmW * 3.7795;
   const pagePxH = pageMmH * 3.7795;
 
@@ -151,7 +156,7 @@ export default function Labels() {
   return (
     <>
       <div id="print-portal" style={{ display: "none", position: "fixed", inset: 0, zIndex: 9999, background: "#fff" }}>
-        <PrintSheet data={data} fields={fields} size={size} copies={copies} labelStyle={labelStyle} />
+        <PrintSheet data={data} fields={fields} size={size} copies={copies} labelStyle={labelStyle} multiMode={multiMode} printItems={printItems} />
       </div>
 
       <div className="flex gap-5 h-full">
@@ -167,6 +172,10 @@ export default function Labels() {
           labelStyle={labelStyle}
           setLabelStyle={setLabelStyle}
           onPrint={handlePrint}
+          multiMode={multiMode}
+          setMultiMode={setMultiMode}
+          printItems={printItems}
+          setPrintItems={setPrintItems}
         />
 
         <div className="flex-1 min-w-0 flex flex-col gap-3">
@@ -202,9 +211,9 @@ export default function Labels() {
             {isThermo && <div />}
             <div className="text-xs text-muted-foreground">
               {isThermo
-                ? `${labelMm.w}×${labelMm.h} мм · ${copies} шт.`
+                ? `${labelMm.w}×${labelMm.h} мм · ${totalCopies} шт.`
                 : previewMode === "sheet"
-                  ? `${copies} шт. · ${totalPages} стр.`
+                  ? `${totalCopies} шт. · ${totalPages} стр.`
                   : `${labelMm.w}×${labelMm.h} мм`}
             </div>
           </div>

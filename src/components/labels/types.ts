@@ -38,3 +38,9 @@ export interface LabelData {
   price: string;
   barcode: string;
 }
+
+export interface PrintItem {
+  id: string;
+  data: LabelData;
+  copies: number;
+}

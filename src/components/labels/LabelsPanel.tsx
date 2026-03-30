@@ -1,5 +1,6 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import type { LabelData, LabelFields, LabelSize, LabelStyle } from "./types";
+import type { LabelData, LabelFields, LabelSize, LabelStyle, PrintItem } from "./types";
 
 const sizeOptions: { id: LabelSize; label: string; sub: string }[] = [
   { id: "large",       label: "Большой 91×62 мм",   sub: "9 шт на листе А4" },
@@ -26,6 +27,15 @@ const fontOptions: { value: string; label: string }[] = [
   { value: "'Black Han Sans', sans-serif", label: "Black Han Sans" },
   { value: "Arial, sans-serif", label: "Arial" },
   { value: "Impact, sans-serif", label: "Impact" },
+];
+
+const DATA_FIELDS: { key: keyof LabelData; label: string; fieldKey: keyof LabelFields }[] = [
+  { key: "shopName", label: "Магазин", fieldKey: "shopName" },
+  { key: "productName", label: "Товар", fieldKey: "productName" },
+  { key: "date", label: "Дата", fieldKey: "date" },
+  { key: "article", label: "Артикул", fieldKey: "article" },
+  { key: "price", label: "Цена", fieldKey: "price" },
+  { key: "barcode", label: "Штрихкод", fieldKey: "barcode" },
 ];
 
 function Slider({ label, value, min, max, step, onChange }: {
@@ -55,6 +65,33 @@ function Slider({ label, value, min, max, step, onChange }: {
   );
 }
 
+function CopiesCounter({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => onChange(Math.max(1, value - 1))}
+        className="w-7 h-7 rounded-md border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors flex-shrink-0"
+      >
+        <Icon name="Minus" size={12} />
+      </button>
+      <input
+        type="number"
+        min={1}
+        max={300}
+        value={value}
+        onChange={(e) => onChange(Math.max(1, Math.min(300, Number(e.target.value))))}
+        className="w-14 text-center bg-muted border border-border rounded-md text-sm py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary mono font-bold"
+      />
+      <button
+        onClick={() => onChange(Math.min(300, value + 1))}
+        className="w-7 h-7 rounded-md border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors flex-shrink-0"
+      >
+        <Icon name="Plus" size={12} />
+      </button>
+    </div>
+  );
+}
+
 export default function LabelsPanel({
   size,
   setSize,
@@ -67,6 +104,10 @@ export default function LabelsPanel({
   labelStyle,
   setLabelStyle,
   onPrint,
+  multiMode,
+  setMultiMode,
+  printItems,
+  setPrintItems,
 }: {
   size: LabelSize;
   setSize: (s: LabelSize) => void;
@@ -79,9 +120,42 @@ export default function LabelsPanel({
   labelStyle: LabelStyle;
   setLabelStyle: (fn: (s: LabelStyle) => LabelStyle) => void;
   onPrint: () => void;
+  multiMode: boolean;
+  setMultiMode: (v: boolean) => void;
+  printItems: PrintItem[];
+  setPrintItems: (fn: (items: PrintItem[]) => PrintItem[]) => void;
 }) {
   const isThermo = size.startsWith("thermo");
   const perPage = size === "large" ? 9 : isThermo ? 1 : 32;
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
+  const totalMultiCopies = printItems.reduce((s, it) => s + it.copies, 0);
+
+  const addItem = () => {
+    const newId = crypto.randomUUID();
+    setPrintItems((items) => [
+      ...items,
+      { id: newId, data: { ...data }, copies: 1 },
+    ]);
+    setExpandedItem(newId);
+  };
+
+  const removeItem = (id: string) => {
+    setPrintItems((items) => items.filter((it) => it.id !== id));
+    if (expandedItem === id) setExpandedItem(null);
+  };
+
+  const updateItemData = (id: string, key: keyof LabelData, value: string) => {
+    setPrintItems((items) =>
+      items.map((it) => it.id === id ? { ...it, data: { ...it.data, [key]: value } } : it)
+    );
+  };
+
+  const updateItemCopies = (id: string, n: number) => {
+    setPrintItems((items) =>
+      items.map((it) => it.id === id ? { ...it, copies: n } : it)
+    );
+  };
 
   return (
     <div className="w-72 flex-shrink-0 flex flex-col gap-4 overflow-y-auto scrollbar-thin pb-4">
@@ -130,28 +204,22 @@ export default function LabelsPanel({
           ))}
       </div>
 
-      {/* Price style — when bigPrice enabled */}
+      {/* Price style */}
       {fields.bigPrice && (
         <div className="stat-card space-y-3">
           <div className="section-title mb-1">Стиль цены</div>
-
           <Slider
             label="Ширина цифр"
             value={labelStyle.priceScaleX}
-            min={0.5}
-            max={3}
-            step={0.1}
+            min={0.5} max={3} step={0.1}
             onChange={(v) => setLabelStyle((s) => ({ ...s, priceScaleX: v }))}
           />
           <Slider
             label="Высота цифр"
             value={labelStyle.priceScaleY}
-            min={0.5}
-            max={3}
-            step={0.1}
+            min={0.5} max={3} step={0.1}
             onChange={(v) => setLabelStyle((s) => ({ ...s, priceScaleY: v }))}
           />
-
           <div>
             <div className="text-xs text-muted-foreground mb-2">Шрифт цены</div>
             <div className="flex flex-col gap-1.5">
@@ -178,7 +246,7 @@ export default function LabelsPanel({
       )}
 
       {/* Thermo hint */}
-      {size.startsWith("thermo") && (
+      {isThermo && (
         <div className="stat-card">
           <div className="text-xs text-muted-foreground leading-relaxed">
             Кликни на любое поле этикетки в превью — появится панель размера и жирности шрифта.
@@ -186,63 +254,165 @@ export default function LabelsPanel({
         </div>
       )}
 
-      {/* Data editor */}
-      <div className="stat-card space-y-3">
-        <div className="section-title mb-1">Данные</div>
-        {(
-          [
-            { key: "shopName", label: "Магазин", show: fields.shopName },
-            { key: "productName", label: "Товар", show: fields.productName },
-            { key: "date", label: "Дата", show: fields.date },
-            { key: "article", label: "Артикул", show: fields.article },
-            { key: "price", label: "Цена", show: fields.price },
-            { key: "barcode", label: "Штрихкод", show: fields.barcode },
-          ] as { key: keyof LabelData; label: string; show: boolean }[]
-        )
-          .filter((f) => f.show)
-          .map((f) => (
-            <div key={f.key}>
-              <label className="text-xs text-muted-foreground block mb-1">{f.label}</label>
-              <input
-                value={data[f.key]}
-                onChange={(e) => setData((d) => ({ ...d, [f.key]: e.target.value }))}
-                className="w-full bg-muted border border-border rounded-md text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          ))}
+      {/* Mode toggle */}
+      <div className="stat-card">
+        <div className="section-title mb-3">Режим печати</div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMultiMode(false)}
+            className="flex-1 py-2 rounded-lg border text-sm font-medium transition-all"
+            style={{
+              background: !multiMode ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--muted))",
+              borderColor: !multiMode ? "hsl(var(--wms-blue) / 0.5)" : "hsl(var(--border))",
+              color: "hsl(var(--foreground))",
+            }}
+          >
+            Один товар
+          </button>
+          <button
+            onClick={() => setMultiMode(true)}
+            className="flex-1 py-2 rounded-lg border text-sm font-medium transition-all"
+            style={{
+              background: multiMode ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--muted))",
+              borderColor: multiMode ? "hsl(var(--wms-blue) / 0.5)" : "hsl(var(--border))",
+              color: "hsl(var(--foreground))",
+            }}
+          >
+            Несколько
+          </button>
+        </div>
       </div>
 
-      {/* Copies */}
-      <div className="stat-card">
-        <div className="section-title mb-3">Количество</div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setCopies(Math.max(1, copies - 1))}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-          >
-            <Icon name="Minus" size={14} />
-          </button>
-          <input
-            type="number"
-            min={1}
-            max={300}
-            value={copies}
-            onChange={(e) => setCopies(Math.max(1, Math.min(300, Number(e.target.value))))}
-            className="flex-1 text-center bg-muted border border-border rounded-md text-sm py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary mono font-bold"
-          />
-          <button
-            onClick={() => setCopies(Math.min(300, copies + 1))}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-          >
-            <Icon name="Plus" size={14} />
-          </button>
+      {/* Single mode: data + copies */}
+      {!multiMode && (
+        <>
+          <div className="stat-card space-y-3">
+            <div className="section-title mb-1">Данные</div>
+            {DATA_FIELDS.filter((f) => fields[f.fieldKey]).map((f) => (
+              <div key={f.key}>
+                <label className="text-xs text-muted-foreground block mb-1">{f.label}</label>
+                <input
+                  value={data[f.key]}
+                  onChange={(e) => setData((d) => ({ ...d, [f.key]: e.target.value }))}
+                  className="w-full bg-muted border border-border rounded-md text-sm px-3 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="stat-card">
+            <div className="section-title mb-3">Количество</div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCopies(Math.max(1, copies - 1))}
+                className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              >
+                <Icon name="Minus" size={14} />
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={300}
+                value={copies}
+                onChange={(e) => setCopies(Math.max(1, Math.min(300, Number(e.target.value))))}
+                className="flex-1 text-center bg-muted border border-border rounded-md text-sm py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary mono font-bold"
+              />
+              <button
+                onClick={() => setCopies(Math.min(300, copies + 1))}
+                className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              >
+                <Icon name="Plus" size={14} />
+              </button>
+            </div>
+            <div className="text-xs text-muted-foreground mt-2 text-center">
+              {isThermo
+                ? `${copies} этикеток`
+                : `${Math.ceil(copies / perPage)} лист(а) А4`}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Multi mode: list of items */}
+      {multiMode && (
+        <div className="stat-card space-y-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="section-title">Товары</div>
+            <button
+              onClick={addItem}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-border hover:bg-muted transition-colors text-foreground"
+            >
+              <Icon name="Plus" size={12} />
+              Добавить
+            </button>
+          </div>
+
+          {printItems.length === 0 && (
+            <div className="text-xs text-muted-foreground text-center py-4">
+              Нажми «Добавить» чтобы добавить товар
+            </div>
+          )}
+
+          {printItems.map((item, idx) => (
+            <div
+              key={item.id}
+              className="border border-border rounded-lg overflow-hidden"
+            >
+              {/* Item header */}
+              <div
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted transition-colors"
+                onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+              >
+                <span className="text-xs text-muted-foreground w-4 flex-shrink-0">{idx + 1}.</span>
+                <span className="text-sm text-foreground flex-1 truncate">
+                  {item.data.productName || "Без названия"}
+                </span>
+                <span className="text-xs text-muted-foreground mono flex-shrink-0">{item.copies} шт</span>
+                <Icon
+                  name={expandedItem === item.id ? "ChevronUp" : "ChevronDown"}
+                  size={14}
+                  className="text-muted-foreground flex-shrink-0"
+                />
+              </div>
+
+              {/* Item body */}
+              {expandedItem === item.id && (
+                <div className="px-3 pb-3 space-y-2 border-t border-border pt-3">
+                  {DATA_FIELDS.filter((f) => fields[f.fieldKey]).map((f) => (
+                    <div key={f.key}>
+                      <label className="text-xs text-muted-foreground block mb-1">{f.label}</label>
+                      <input
+                        value={item.data[f.key]}
+                        onChange={(e) => updateItemData(item.id, f.key, e.target.value)}
+                        className="w-full bg-background border border-border rounded-md text-xs px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Кол-во:</span>
+                      <CopiesCounter value={item.copies} onChange={(n) => updateItemCopies(item.id, n)} />
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-xs text-destructive hover:opacity-70 transition-opacity flex items-center gap-1"
+                    >
+                      <Icon name="Trash2" size={13} />
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {printItems.length > 0 && (
+            <div className="text-xs text-muted-foreground text-center pt-1">
+              {totalMultiCopies} шт.{!isThermo && ` · ${Math.ceil(totalMultiCopies / perPage)} лист(а) А4`}
+            </div>
+          )}
         </div>
-        <div className="text-xs text-muted-foreground mt-2 text-center">
-          {isThermo
-            ? `${copies} этикеток`
-            : `${Math.ceil(copies / perPage)} лист(а) А4`}
-        </div>
-      </div>
+      )}
 
       {/* Print button */}
       <button
