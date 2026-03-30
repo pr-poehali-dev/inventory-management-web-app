@@ -1,366 +1,274 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import InvoiceImport, { InvoiceRow } from "@/components/receiving/InvoiceImport";
-import InvoiceValidation from "@/components/receiving/InvoiceValidation";
-import EnrichmentImport from "@/components/receiving/EnrichmentImport";
-import MarkingImport from "@/components/receiving/MarkingImport";
+import { InvoiceRow } from "@/components/receiving/InvoiceImport";
 
-interface Document {
+interface ReceivingDoc {
   id: string;
   supplier: string;
   date: string;
   items: number;
-  status: string;
+  status: "pending" | "checking" | "done" | "error";
   doc: string;
   rows?: InvoiceRow[];
 }
 
-const initialDocuments: Document[] = [
-  { id: "ПРД-0144", supplier: "ООО Кабельстрой", date: "29.03.2026", items: 5, status: "pending", doc: "ТН-2024-0891" },
-  { id: "ПРД-0143", supplier: "ИП Электромонтаж", date: "29.03.2026", items: 12, status: "checking", doc: "УПД-56712" },
-  { id: "ПРД-0142", supplier: "АО ЭлектроСнаб", date: "28.03.2026", items: 8, status: "done", doc: "ТН-2024-0880" },
-  { id: "ПРД-0141", supplier: "ООО Техносфера", date: "28.03.2026", items: 3, status: "done", doc: "УПД-56680" },
-  { id: "ПРД-0140", supplier: "ИП Розниченко", date: "27.03.2026", items: 7, status: "error", doc: "ТН-2024-0871" },
+const initialDocs: ReceivingDoc[] = [
+  { id: "ПРД-0144", supplier: "ООО Кабельстрой",  date: "29.03.2026", items: 5,  status: "pending",  doc: "НКЛ-0012" },
+  { id: "ПРД-0143", supplier: "ИП Электромонтаж", date: "29.03.2026", items: 12, status: "checking", doc: "НКЛ-0011" },
+  { id: "ПРД-0142", supplier: "АО ЭлектроСнаб",  date: "28.03.2026", items: 8,  status: "done",     doc: "НКЛ-0010" },
+  { id: "ПРД-0141", supplier: "ООО Техносфера",   date: "28.03.2026", items: 3,  status: "done",     doc: "НКЛ-0009" },
+  { id: "ПРД-0140", supplier: "ИП Розниченко",    date: "27.03.2026", items: 7,  status: "error",    doc: "НКЛ-0008" },
 ];
 
-const statusLabel: Record<string, { text: string; cls: string }> = {
-  pending: { text: "Ожидает", cls: "badge-pending" },
-  checking: { text: "Проверка", cls: "badge-out" },
-  done: { text: "Принято", cls: "badge-in" },
-  error: { text: "Расхождение", cls: "badge-error" },
+const STATUS: Record<ReceivingDoc["status"], { text: string; cls: string }> = {
+  pending:  { text: "Ожидает",     cls: "badge-pending" },
+  checking: { text: "Проверка",    cls: "badge-out" },
+  done:     { text: "Принято",     cls: "badge-in" },
+  error:    { text: "Расхождение", cls: "badge-error" },
 };
 
-const fallbackItems = [
-  { barcode: "4607086360124", name: "Кабель витая пара Cat6 (бухта 305м)", qty: 2, unit: "бух", costPrice: 3200 },
-  { barcode: "4607086360131", name: "Коннектор RJ-45 (уп. 100шт)", qty: 5, unit: "уп", costPrice: 480 },
-  { barcode: "4607086360148", name: "Патч-корд 1м синий", qty: 50, unit: "шт", costPrice: 95 },
-  { barcode: "4607086360155", name: "Труба гофрированная 16мм (бухта 50м)", qty: 3, unit: "бух", costPrice: 720 },
-  { barcode: "4607086360162", name: "Дюбель-гвоздь 6×60 (уп. 200шт)", qty: 10, unit: "уп", costPrice: 210 },
+const MOCK_ITEMS = [
+  { id: 1, name: "Кабель витая пара Cat6 (бухта 305м)", art: "4607086360124", qty: 2, unit: "бух", expected: 2, scanned: 0 },
+  { id: 2, name: "Коннектор RJ-45 (уп. 100шт)",         art: "4607086360131", qty: 5, unit: "уп",  expected: 5, scanned: 5 },
+  { id: 3, name: "Патч-корд 1м синий",                   art: "4607086360148", qty: 50, unit: "шт", expected: 50, scanned: 48 },
+  { id: 4, name: "Труба гофрированная 16мм (бухта 50м)", art: "4607086360155", qty: 3, unit: "бух", expected: 3, scanned: 3 },
+  { id: 5, name: "Дюбель-гвоздь 6×60 (уп. 200шт)",      art: "4607086360162", qty: 10, unit: "уп", expected: 10, scanned: 10 },
 ];
 
 export default function Receiving() {
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
-  const [selected, setSelected] = useState("ПРД-0144");
+  const [docs] = useState<ReceivingDoc[]>(initialDocs);
+  const [selectedId, setSelectedId] = useState(initialDocs[0].id);
   const [barcode, setBarcode] = useState("");
   const [scanned, setScanned] = useState<string[]>([]);
-  const [showImport, setShowImport] = useState(false);
-  const [showEnrich, setShowEnrich] = useState(false);
-  const [showMarking, setShowMarking] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const selected = docs.find((d) => d.id === selectedId);
+
+  const filtered = docs.filter(
+    (d) =>
+      d.id.toLowerCase().includes(search.toLowerCase()) ||
+      d.supplier.toLowerCase().includes(search.toLowerCase()) ||
+      d.doc.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleScan = () => {
-    if (barcode.trim()) {
-      setScanned((prev) => [barcode.trim(), ...prev.slice(0, 4)]);
-      setBarcode("");
-    }
+    if (!barcode.trim()) return;
+    setScanned((prev) => [barcode.trim(), ...prev.slice(0, 9)]);
+    setBarcode("");
   };
 
-  const updateDocRows = (rows: InvoiceRow[]) => {
-    setDocuments((prev) =>
-      prev.map((d) => (d.id === selected ? { ...d, rows, items: rows.length } : d))
-    );
-  };
-
-  const handleImport = (rows: InvoiceRow[]) => {
-    const today = new Date().toLocaleDateString("ru-RU");
-    const newId = `ПРД-${String(Date.now()).slice(-4)}`;
-    const currentDoc = documents.find((d) => d.id === selected);
-    const newDoc: Document = {
-      id: newId,
-      supplier: currentDoc?.supplier ?? "Новый поставщик",
-      date: today,
-      items: rows.length,
-      status: "checking",
-      doc: `ИМП-${newId}`,
-      rows,
-    };
-    setDocuments((prev) => [newDoc, ...prev]);
-    setSelected(newId);
-  };
-
-  const selectedDoc = documents.find((d) => d.id === selected);
-  const importedRows = selectedDoc?.rows ?? null;
-
-  const totalSum = importedRows
-    ? importedRows.reduce((s, r) => s + (r.costTotal > 0 ? r.costTotal : r.costPrice * r.qty), 0)
-    : fallbackItems.reduce((s, i) => s + i.qty * i.costPrice, 0);
+  const scannedTotal = MOCK_ITEMS.reduce((s, i) => s + i.scanned, 0);
+  const expectedTotal = MOCK_ITEMS.reduce((s, i) => s + i.expected, 0);
+  const progress = expectedTotal > 0 ? Math.round((scannedTotal / expectedTotal) * 100) : 0;
 
   return (
-    <>
-      {showImport && (
-        <InvoiceImport
-          supplierName={selectedDoc?.supplier}
-          onImport={handleImport}
-          onClose={() => setShowImport(false)}
-        />
-      )}
-      {showEnrich && importedRows && (
-        <EnrichmentImport
-          rows={importedRows}
-          onEnriched={(rows) => { updateDocRows(rows); }}
-          onClose={() => setShowEnrich(false)}
-        />
-      )}
-      {showMarking && importedRows && (
-        <MarkingImport
-          rows={importedRows}
-          onApplied={(rows) => { updateDocRows(rows); }}
-          onClose={() => setShowMarking(false)}
-        />
-      )}
+    <div className="flex gap-4 h-full">
 
-      <div className="flex gap-4 h-full">
-        {/* Left: Document List */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Документы приёмки</span>
-            <button
-              onClick={() => setShowImport(true)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors"
-              style={{ background: "hsl(var(--primary))", color: "#fff" }}
-            >
-              <Icon name="FileUp" size={14} />
-              Загрузить
-            </button>
-          </div>
-
-          <div className="relative">
-            <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              placeholder="Поиск по документу..."
-              className="w-full bg-muted border border-border rounded-md text-sm pl-8 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-
-          <div className="space-y-2 overflow-y-auto scrollbar-thin flex-1">
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => setSelected(doc.id)}
-                className="w-full text-left p-3 rounded-lg border transition-all"
-                style={{
-                  background: selected === doc.id ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--card))",
-                  borderColor: selected === doc.id ? "hsl(var(--wms-blue) / 0.4)" : "hsl(var(--border))",
-                }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="mono text-xs font-medium text-primary">{doc.id}</span>
-                  <span className={statusLabel[doc.status].cls}>{statusLabel[doc.status].text}</span>
-                </div>
-                <div className="text-sm font-medium text-foreground truncate">{doc.supplier}</div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-muted-foreground">{doc.date}</span>
-                  <span className="text-xs text-muted-foreground">{doc.items} поз.</span>
-                </div>
-                <div className="mono text-[10px] text-muted-foreground mt-0.5">{doc.doc}</div>
-              </button>
-            ))}
-          </div>
+      {/* ─── Левая колонка: список документов приёмки ─────────────────── */}
+      <div className="w-72 flex-shrink-0 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-muted-foreground">Документы приёмки</span>
         </div>
 
-        {/* Right: Document Detail */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
-          {/* Scanner bar */}
-          <div
-            className="flex items-center gap-3 p-4 rounded-lg border"
-            style={{ background: "hsl(var(--wms-blue) / 0.06)", borderColor: "hsl(var(--wms-blue) / 0.2)" }}
-          >
-            <Icon name="ScanBarcode" size={20} className="text-primary flex-shrink-0" />
-            <div className="flex-1">
-              <div className="text-xs text-muted-foreground mb-1">Сканер штрихкода</div>
-              <div className="flex gap-2">
-                <input
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                  placeholder="Отсканируйте или введите штрихкод..."
-                  className="flex-1 bg-background border border-border rounded-md text-sm px-3 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary mono"
-                />
-                <button
-                  onClick={handleScan}
-                  className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
-                  style={{ background: "hsl(var(--primary))", color: "#fff" }}
-                >
-                  Добавить
-                </button>
+        <div className="relative">
+          <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск..."
+            className="w-full bg-muted border border-border rounded-md text-sm pl-8 pr-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        <div className="space-y-2 overflow-y-auto scrollbar-thin flex-1">
+          {filtered.map((doc) => (
+            <button
+              key={doc.id}
+              onClick={() => setSelectedId(doc.id)}
+              className="w-full text-left p-3 rounded-lg border transition-all"
+              style={{
+                background: selectedId === doc.id ? "hsl(var(--wms-blue) / 0.08)" : "hsl(var(--card))",
+                borderColor: selectedId === doc.id ? "hsl(var(--wms-blue) / 0.4)" : "hsl(var(--border))",
+              }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="mono text-xs font-medium text-primary">{doc.id}</span>
+                <span className={STATUS[doc.status].cls}>{STATUS[doc.status].text}</span>
+              </div>
+              <div className="text-sm font-medium text-foreground truncate">{doc.supplier}</div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-muted-foreground">{doc.date}</span>
+                <span className="text-xs text-muted-foreground">{doc.items} поз.</span>
+              </div>
+              <div className="mono text-[10px] text-muted-foreground mt-0.5">← {doc.doc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── Правая колонка ────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col gap-4 min-w-0">
+
+        {/* Сканер */}
+        <div
+          className="flex items-center gap-3 p-4 rounded-lg border"
+          style={{ background: "hsl(var(--wms-blue) / 0.06)", borderColor: "hsl(var(--wms-blue) / 0.2)" }}
+        >
+          <Icon name="ScanBarcode" size={20} className="text-primary flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-xs text-muted-foreground mb-1">Сканер штрихкода</div>
+            <div className="flex gap-2">
+              <input
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleScan()}
+                placeholder="Отсканируйте или введите штрихкод..."
+                className="flex-1 bg-background border border-border rounded-md text-sm px-3 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary mono"
+              />
+              <button
+                onClick={handleScan}
+                className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
+                style={{ background: "hsl(var(--primary))", color: "#fff" }}
+              >
+                Добавить
+              </button>
+            </div>
+          </div>
+          {scanned.length > 0 && (
+            <div className="flex-shrink-0 max-w-[200px]">
+              <div className="text-xs text-muted-foreground mb-1">Последние сканы</div>
+              <div className="space-y-0.5 max-h-20 overflow-y-auto">
+                {scanned.map((s, i) => (
+                  <div key={i} className="mono text-xs text-foreground truncate">{s}</div>
+                ))}
               </div>
             </div>
-            {scanned.length > 0 && (
-              <div className="flex-shrink-0">
-                <div className="text-xs text-muted-foreground mb-1">Последние сканы</div>
-                <div className="space-y-0.5">
-                  {scanned.map((s, i) => (
-                    <div key={i} className="mono text-xs text-foreground">{s}</div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Header */}
-          <div className="stat-card">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <span className="mono text-lg font-bold text-primary">{selected}</span>
-                  <span className={statusLabel[selectedDoc?.status ?? "pending"].cls}>
-                    {statusLabel[selectedDoc?.status ?? "pending"].text}
-                  </span>
+        {/* Шапка */}
+        <div className="stat-card">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="mono text-lg font-bold text-primary">{selected?.id}</span>
+                {selected && (
+                  <span className={STATUS[selected.status].cls}>{STATUS[selected.status].text}</span>
+                )}
+              </div>
+              <div className="text-base font-semibold mt-0.5 text-foreground">{selected?.supplier}</div>
+              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                <span>Накладная: <span className="text-foreground font-medium">{selected?.doc}</span></span>
+                <span>Дата: <span className="text-foreground font-medium">{selected?.date}</span></span>
+              </div>
+            </div>
+
+            {/* Прогресс приёмки */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Принято</div>
+                  <div className="text-base font-bold font-mono text-foreground">
+                    {scannedTotal} / {expectedTotal}
+                  </div>
                 </div>
-                <div className="text-base font-semibold mt-0.5">{selectedDoc?.supplier}</div>
-                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                  <span>Документ: <span className="text-foreground font-medium">{selectedDoc?.doc}</span></span>
-                  <span>Дата: <span className="text-foreground font-medium">{selectedDoc?.date}</span></span>
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold font-mono"
+                  style={{
+                    background: `conic-gradient(hsl(var(--wms-green)) ${progress * 3.6}deg, hsl(var(--muted)) 0deg)`,
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: "hsl(var(--card))" }}
+                  >
+                    {progress}%
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setShowImport(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-                >
-                  <Icon name="FileUp" size={15} />
-                  Накладная
-                </button>
-                <button
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
-                >
-                  <Icon name="FileText" size={15} />
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm border border-border text-muted-foreground hover:text-foreground transition-colors">
+                  <Icon name="FileText" size={14} />
                   Документ
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
                   style={{ background: "hsl(var(--wms-green))", color: "#fff" }}
                 >
-                  <Icon name="CheckCircle" size={15} />
-                  Принять
+                  <Icon name="CheckCircle" size={14} />
+                  Принять всё
                 </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Validation panel */}
-          {importedRows && (
-            <InvoiceValidation
-              rows={importedRows}
-              onEnrich={() => setShowEnrich(true)}
-              onMarking={() => setShowMarking(true)}
-            />
-          )}
-
-          {/* Items Table */}
-          <div className="stat-card flex-1 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="section-title">Позиции документа</div>
-              {importedRows && (
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: "hsl(var(--wms-green) / 0.15)", color: "hsl(var(--wms-green))" }}
-                >
-                  Загружено из файла
-                </span>
-              )}
-            </div>
-            <div className="overflow-y-auto scrollbar-thin flex-1">
-              {importedRows ? (
-                <table className="w-full data-table">
-                  <thead>
-                    <tr>
-                      <th className="text-left">Наименование</th>
-                      <th className="text-left">Арт. пост.</th>
-                      <th className="text-left">Бренд</th>
-                      <th className="text-right">Кол-во</th>
-                      <th className="text-right">Себест.</th>
-                      <th className="text-right">Сумма</th>
-                      <th className="text-right">Цена прод.</th>
-                      <th className="text-center">Метки</th>
+        {/* Таблица позиций */}
+        <div className="stat-card flex-1 overflow-hidden flex flex-col">
+          <div className="section-title mb-4">Позиции для приёмки</div>
+          <div className="overflow-y-auto scrollbar-thin flex-1">
+            <table className="w-full data-table">
+              <thead>
+                <tr>
+                  <th className="text-left">Штрихкод</th>
+                  <th className="text-left">Наименование</th>
+                  <th className="text-right">Ожидается</th>
+                  <th className="text-right">Принято</th>
+                  <th className="text-center">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_ITEMS.map((item) => {
+                  const ok = item.scanned === item.expected;
+                  const partial = item.scanned > 0 && item.scanned < item.expected;
+                  const none = item.scanned === 0;
+                  return (
+                    <tr key={item.id}>
+                      <td className="mono text-xs text-muted-foreground">{item.art}</td>
+                      <td className="text-sm font-medium text-foreground">{item.name}</td>
+                      <td className="text-right mono text-sm">
+                        {item.expected} <span className="text-muted-foreground text-xs">{item.unit}</span>
+                      </td>
+                      <td className="text-right mono text-sm">
+                        <span style={{ color: ok ? "hsl(var(--wms-green))" : partial ? "hsl(var(--wms-amber))" : "hsl(var(--muted-foreground))" }}>
+                          {item.scanned}
+                        </span>
+                        {" "}<span className="text-muted-foreground text-xs">{item.unit}</span>
+                      </td>
+                      <td className="text-center">
+                        {ok   && <span className="badge-in">Принято</span>}
+                        {partial && <span className="badge-out">Частично</span>}
+                        {none && <span className="badge-pending">Ожидает</span>}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {importedRows.map((item, i) => (
-                      <tr key={i} className="cursor-pointer">
-                        <td>
-                          <div className="font-medium text-sm">{item.name}</div>
-                          {item.manufacturerArticle && (
-                            <div className="text-xs text-muted-foreground mono">{item.manufacturerArticle}</div>
-                          )}
-                        </td>
-                        <td className="mono text-xs text-muted-foreground">{item.supplierArticle || "—"}</td>
-                        <td className="text-sm text-muted-foreground">{item.brand || "—"}</td>
-                        <td className="text-right mono">
-                          {item.qty} <span className="text-muted-foreground text-xs">{item.unit}</span>
-                        </td>
-                        <td className="text-right mono text-sm">{item.costPrice.toFixed(2)} ₽</td>
-                        <td className="text-right mono text-sm font-medium">
-                          {(item.costTotal > 0 ? item.costTotal : item.costPrice * item.qty).toFixed(2)} ₽
-                        </td>
-                        <td className="text-right mono text-sm">
-                          {item.salePrice > 0 ? `${item.salePrice.toFixed(2)} ₽` : "—"}
-                        </td>
-                        <td className="text-center">
-                          <div className="flex justify-center gap-1">
-                            {item.marking?.length > 0 && (
-                              <span title="DataMatrix" style={{ color: "hsl(var(--wms-blue))" }}>
-                                <Icon name="QrCode" size={13} />
-                              </span>
-                            )}
-                            {item.oem && (
-                              <span title="OEM" style={{ color: "hsl(var(--wms-amber))" }}>
-                                <Icon name="Link" size={13} />
-                              </span>
-                            )}
-                            {item.unit === "компл." && (
-                              <span title="Комплект свечей">🕯️</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <table className="w-full data-table">
-                  <thead>
-                    <tr>
-                      <th className="text-left">Штрихкод</th>
-                      <th className="text-left">Наименование</th>
-                      <th className="text-right">Кол-во</th>
-                      <th className="text-right">Себест.</th>
-                      <th className="text-right">Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fallbackItems.map((item) => (
-                      <tr key={item.barcode} className="cursor-pointer">
-                        <td className="mono text-xs text-muted-foreground">{item.barcode}</td>
-                        <td>
-                          <div className="font-medium text-sm">{item.name}</div>
-                        </td>
-                        <td className="text-right mono">
-                          {item.qty} <span className="text-muted-foreground text-xs">{item.unit}</span>
-                        </td>
-                        <td className="text-right mono text-sm">{item.costPrice.toLocaleString("ru")} ₽</td>
-                        <td className="text-right mono text-sm font-medium">
-                          {(item.qty * item.costPrice).toLocaleString("ru")} ₽
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            <div className="flex items-center justify-between pt-3 mt-3 border-t border-border text-sm">
-              <span className="text-muted-foreground">
-                Итого позиций:{" "}
-                <span className="text-foreground font-medium">
-                  {importedRows ? importedRows.length : fallbackItems.length}
-                </span>
-              </span>
-              <span className="font-semibold text-foreground">
-                Сумма: <span className="text-primary mono">{totalSum.toLocaleString("ru")} ₽</span>
-              </span>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div
+            className="flex items-center justify-between pt-3 mt-3 border-t text-sm"
+            style={{ borderColor: "hsl(var(--border))" }}
+          >
+            <span className="text-muted-foreground">
+              Позиций: <span className="text-foreground font-medium">{MOCK_ITEMS.length}</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <div
+                className="h-1.5 w-32 rounded-full overflow-hidden"
+                style={{ background: "hsl(var(--muted))" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${progress}%`, background: "hsl(var(--wms-green))" }}
+                />
+              </div>
+              <span className="font-mono text-xs text-foreground">{progress}%</span>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

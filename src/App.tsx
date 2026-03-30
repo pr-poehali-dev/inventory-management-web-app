@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Receiving from "@/pages/Receiving";
+import Invoices from "@/pages/Invoices";
 import Warehouse from "@/pages/Warehouse";
 import Reports from "@/pages/Reports";
 import Sync from "@/pages/Sync";
@@ -21,6 +22,7 @@ const App = () => {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <Dashboard />;
+      case "invoices": return <Invoices />;
       case "receiving": return <Receiving />;
       case "warehouse": return <Warehouse />;
       case "warehouse-map": return <WarehouseMap />;
