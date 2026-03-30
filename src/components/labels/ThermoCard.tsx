@@ -80,23 +80,18 @@ function SelectionToolbar({
   defaultFs: number;
   defaultFw: number;
 }) {
-  const [pos, setPos] = useState<{ top: number; left: number; below: boolean } | null>(null);
+  const [visible, setVisible] = useState(false);
   const [fs, setFs] = useState(defaultFs);
   const [fw, setFw] = useState(defaultFw);
 
   const update = useCallback(() => {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) { setPos(null); return; }
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) { setVisible(false); return; }
     const card = cardRef.current;
     if (!card) return;
     const range = sel.getRangeAt(0);
-    if (!card.contains(range.commonAncestorContainer)) { setPos(null); return; }
-    const rect = range.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    const relTop = rect.top - cardRect.top;
-    const relBottom = rect.bottom - cardRect.top;
-    const below = relTop < 44;
-    setPos({ top: below ? relBottom : relTop, left: rect.left - cardRect.left + rect.width / 2, below });
+    if (!card.contains(range.commonAncestorContainer)) { setVisible(false); return; }
+    setVisible(true);
     // Читаем стиль начала выделения
     const node = range.startContainer;
     const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
@@ -148,7 +143,7 @@ function SelectionToolbar({
     setFw(weight);
   };
 
-  if (!pos) return null;
+  if (!visible) return null;
 
   const divider = <div key="div" style={{ width: "1px", height: "14px", background: "#334155", margin: "0 2px" }} />;
   const btn = (label: string, onClick: () => void, color = "#94a3b8", bg = "none") => (
@@ -159,12 +154,12 @@ function SelectionToolbar({
     >{label}</button>
   );
 
-  return (
+  const toolbar = (
     <div
       style={{
-        position: "absolute",
-        top: pos.below ? pos.top + 4 : pos.top - 38,
-        left: pos.left,
+        position: "fixed",
+        top: 12,
+        left: "50%",
         transform: "translateX(-50%)",
         background: "#1e293b",
         borderRadius: "6px",
@@ -172,7 +167,7 @@ function SelectionToolbar({
         display: "flex",
         alignItems: "center",
         gap: "4px",
-        zIndex: 200,
+        zIndex: 9999,
         boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         whiteSpace: "nowrap",
       }}
@@ -186,6 +181,8 @@ function SelectionToolbar({
       {btn("X", () => changeFw(900), fw === 900 ? "#fff" : "#94a3b8", fw === 900 ? "#2563eb" : "none")}
     </div>
   );
+
+  return createPortal(toolbar, document.body);
 }
 
 export function ThermoCard({
