@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
-import Icon from "@/components/ui/icon";
 import { Product, SupplierArticle, MOCK_PRODUCTS } from "./products/products.types";
 import ProductList from "./products/ProductList";
 import ProductDetail from "./products/ProductDetail";
-import ProductPrintModal from "./products/ProductPrintModal";
 
 export type { Product, SupplierArticle };
 
@@ -33,7 +31,6 @@ export default function Products({ onNavigate }: Props) {
   const [selected, setSelected] = useState<Product | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Product | null>(null);
-  const [printTarget, setPrintTarget] = useState<Product | null>(null);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleRowClick(p: Product) {
@@ -106,10 +103,9 @@ export default function Products({ onNavigate }: Props) {
         selectedId={selected?.id ?? null}
         onRowClick={handleRowClick}
         onEdit={startEdit}
-        onPrint={setPrintTarget}
+        onGoToLabels={handleGoToLabels}
       />
 
-      {/* Карточка товара — перекрывает список абсолютно */}
       {selected && (
         <div className="absolute inset-0 z-20">
           <ProductDetail
@@ -127,10 +123,6 @@ export default function Products({ onNavigate }: Props) {
             setSupplierArticle={setSupplierArticle}
           />
         </div>
-      )}
-
-      {printTarget && (
-        <ProductPrintModal product={printTarget} onClose={() => setPrintTarget(null)} />
       )}
     </div>
   );

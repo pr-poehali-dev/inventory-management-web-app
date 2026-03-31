@@ -105,11 +105,11 @@ interface Props {
   selectedId: string | null;
   onRowClick: (p: Product) => void;
   onEdit: (p: Product) => void;
-  onPrint: (p: Product) => void;
+  onGoToLabels: (p: Product) => void;
 }
 
 /* ── Компонент ──────────────────────────────────────────────────── */
-export default function ProductList({ products, selectedId, onRowClick, onEdit, onPrint }: Props) {
+export default function ProductList({ products, selectedId, onRowClick, onEdit, onGoToLabels }: Props) {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [visible, setVisible] = useState<Record<VisibleField, boolean>>(DEFAULT_FIELDS);
@@ -316,28 +316,28 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
               </div>
 
               {/* Цена + кнопки */}
-              <div className="flex flex-col items-end justify-between flex-shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex flex-col items-end justify-between flex-shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
                 {visible.price && (
-                  <div className="text-base font-bold" style={{ color: "hsl(var(--wms-blue))" }}>
+                  <div className="text-xl font-bold" style={{ color: "hsl(var(--wms-blue))" }}>
                     {fmt(p.salePrice)} ₽
                   </div>
                 )}
-                <div className="flex gap-0.5">
+                <div className="flex gap-1">
                   <button
                     onClick={() => onEdit(p)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    className="p-2 rounded-md hover:bg-muted transition-colors"
                     style={{ color: "hsl(var(--muted-foreground))" }}
                     title="Редактировать"
                   >
-                    <Icon name="Pencil" size={14} />
+                    <Icon name="Pencil" size={16} />
                   </button>
                   <button
-                    onClick={() => onPrint(p)}
-                    className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                    onClick={() => onGoToLabels(p)}
+                    className="p-2 rounded-md hover:bg-muted transition-colors"
                     style={{ color: "hsl(var(--muted-foreground))" }}
-                    title="Печать ценника"
+                    title="Ценники и этикетки"
                   >
-                    <Icon name="Printer" size={14} />
+                    <Icon name="Tag" size={16} />
                   </button>
                 </div>
               </div>
