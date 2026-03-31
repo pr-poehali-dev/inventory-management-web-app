@@ -9,6 +9,7 @@ interface LayoutProps {
 
 const navItems = [
   { id: "dashboard", label: "Дашборд", icon: "LayoutDashboard" },
+  { id: "products", label: "Товары", icon: "Package" },
   { id: "invoices", label: "Накладные", icon: "FileText" },
   { id: "receiving", label: "Приёмка товара", icon: "PackagePlus" },
   { id: "warehouse", label: "Склад", icon: "Warehouse" },
