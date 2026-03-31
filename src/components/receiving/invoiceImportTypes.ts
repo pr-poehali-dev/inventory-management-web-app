@@ -146,10 +146,9 @@ export function parseRows(
 
 // ─── Дубли ─────────────────────────────────────────────────────────────────
 
-/** Ключ идентичности: артикул изготовителя → артикул поставщика → название (нормализованное) */
+/** Ключ идентичности: артикул изготовителя → название (нормализованное) */
 export function rowDuplicateKey(row: InvoiceRow): string {
   if (row.manufacturerArticle.trim()) return `ma:${row.manufacturerArticle.trim().toLowerCase()}`;
-  if (row.supplierArticle.trim()) return `sa:${row.supplierArticle.trim().toLowerCase()}`;
   return `nm:${row.name.trim().toLowerCase()}`;
 }
 
