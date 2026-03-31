@@ -22,7 +22,7 @@ export default function ProductPrintModal({ product, onClose }: Props) {
     <div class="name">${product.name}</div>
     <div class="art">Арт: ${product.manufacturerArticle || product.id}</div>
     <div class="price">${fmt(product.salePrice)} ₽</div>
-    <div class="bc">${product.barcode || product.id}</div>
+    <div class="bc">${product.barcodes[0] || product.id}</div>
     <script>window.onload=function(){window.print();window.close();}
     </body></html>`);
     w.document.close();
@@ -52,7 +52,7 @@ export default function ProductPrintModal({ product, onClose }: Props) {
           <div className="text-2xl font-bold text-right mt-1" style={{ color: "hsl(var(--wms-blue))" }}>
             {fmt(product.salePrice)} ₽
           </div>
-          <div className="text-xs text-muted-foreground text-center mt-1">{product.barcode || product.id}</div>
+          <div className="text-xs text-muted-foreground text-center mt-1">{product.barcodes[0] || product.id}</div>
         </div>
         <button
           onClick={handlePrint}

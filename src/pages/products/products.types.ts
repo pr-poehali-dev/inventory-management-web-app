@@ -13,7 +13,7 @@ export interface Product {
   salePrice: number;
   qty: number;
   lowStockThreshold: number;
-  barcode: string;
+  barcodes: string[];
   oem: string;
   photo: string;
   cells: string[];
@@ -40,7 +40,7 @@ export const MOCK_PRODUCTS: Product[] = [
     salePrice: 65,
     qty: 12,
     lowStockThreshold: 50,
-    barcode: "4600000012345",
+    barcodes: ["4600000012345", "4600000012346"],
     oem: "",
     photo: "",
     cells: ["А-01-3", "А-01-4"],
@@ -59,7 +59,7 @@ export const MOCK_PRODUCTS: Product[] = [
     salePrice: 185,
     qty: 54,
     lowStockThreshold: 20,
-    barcode: "4600000023456",
+    barcodes: ["4600000023456"],
     oem: "BA47-29",
     photo: "",
     cells: ["Б-03-1"],
@@ -77,7 +77,7 @@ export const MOCK_PRODUCTS: Product[] = [
     salePrice: 320,
     qty: 0,
     lowStockThreshold: 10,
-    barcode: "3414971094536",
+    barcodes: ["3414971094536"],
     oem: "",
     photo: "",
     cells: [],
@@ -95,7 +95,7 @@ export const MOCK_PRODUCTS: Product[] = [
     salePrice: 790,
     qty: 18,
     lowStockThreshold: 5,
-    barcode: "4600000034567",
+    barcodes: ["4600000034567"],
     oem: "",
     photo: "",
     cells: ["В-05-2"],

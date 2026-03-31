@@ -225,10 +225,9 @@ export default function ProductDetail({
                     {[
                       { label: "Бренд", key: "brand" as const },
                       { label: "Артикул изг.", key: "manufacturerArticle" as const },
-                      { label: "Штрихкод", key: "barcode" as const },
                       { label: "OEM", key: "oem" as const },
                     ].map(({ label, key }, i, arr) => (
-                      <tr key={key} className={i < arr.length - 1 ? "border-b" : ""} style={{ borderColor: "hsl(var(--border))" }}>
+                      <tr key={key} className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                         <td className="text-muted-foreground px-3 py-2 w-36">{label}</td>
                         <td className="px-3 py-2">
                           <input
@@ -239,6 +238,40 @@ export default function ProductDetail({
                         </td>
                       </tr>
                     ))}
+                    <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
+                      <td className="text-muted-foreground px-3 py-2 align-top pt-3">Штрихкоды</td>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-col gap-1.5">
+                          {form.barcodes.map((bc, i) => (
+                            <div key={i} className="flex gap-1.5">
+                              <input
+                                className={inputCls}
+                                value={bc}
+                                onChange={(e) => {
+                                  const arr = [...form.barcodes];
+                                  arr[i] = e.target.value;
+                                  setF("barcodes", arr);
+                                }}
+                              />
+                              <button
+                                onClick={() => setF("barcodes", form.barcodes.filter((_, idx) => idx !== i))}
+                                className="flex-shrink-0"
+                              >
+                                <Icon name="X" size={14} className="text-destructive" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => setF("barcodes", [...form.barcodes, ""])}
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded-md self-start"
+                            style={{ background: "hsl(var(--wms-blue) / 0.1)", color: "hsl(var(--wms-blue))" }}
+                          >
+                            <Icon name="Plus" size={11} />
+                            Добавить штрихкод
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                     <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                       <td className="text-muted-foreground px-3 py-2">Единица</td>
                       <td className="px-3 py-2">
@@ -278,8 +311,8 @@ export default function ProductDetail({
                   [
                     { label: "Бренд", value: display.brand || "—" },
                     { label: "Артикул изг.", value: display.manufacturerArticle || "—" },
-                    { label: "Штрихкод", value: display.barcode || "—" },
                     { label: "OEM", value: display.oem || "—" },
+                    { label: "Штрихкоды", value: display.barcodes.length ? display.barcodes.join(", ") : "—" },
                     { label: "Единица", value: display.unit },
                     { label: "Мин. остаток", value: `${display.lowStockThreshold} ${display.unit}` },
                     { label: "Ячейки", value: display.cells.length ? display.cells.join(", ") : "—" },

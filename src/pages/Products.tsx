@@ -22,7 +22,7 @@ function goToLabelsWithProduct(p: Product) {
         productName: p.name,
         article: p.manufacturerArticle || p.id,
         price: p.salePrice.toLocaleString("ru-RU"),
-        barcode: p.barcode || "",
+        barcode: p.barcodes[0] || "",
       },
     }));
   } catch (_) { /* ignore */ }

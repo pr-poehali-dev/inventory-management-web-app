@@ -125,7 +125,7 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
       p.name.toLowerCase().includes(q) ||
       p.manufacturerArticle.toLowerCase().includes(q) ||
       p.brand.toLowerCase().includes(q) ||
-      p.barcode.includes(q) ||
+      p.barcodes.some((b) => b.includes(q)) ||
       p.oem.toLowerCase().includes(q) ||
       p.supplierArticles.some((sa) => sa.article.toLowerCase().includes(q))
     );
@@ -243,11 +243,15 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                   <CopyText value={p.name} />
                 </div>
 
-                {/* Штрихкод */}
-                {visible.barcode && p.barcode && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Icon name="Barcode" size={12} className="opacity-50 flex-shrink-0" />
-                    <CopyText value={p.barcode} />
+                {/* Штрихкоды */}
+                {visible.barcode && p.barcodes.length > 0 && (
+                  <div className="flex flex-col gap-0.5">
+                    {p.barcodes.map((bc, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Icon name="Barcode" size={12} className="opacity-50 flex-shrink-0" />
+                        <CopyText value={bc} />
+                      </div>
+                    ))}
                   </div>
                 )}
 
