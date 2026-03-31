@@ -610,6 +610,14 @@ export default function Products() {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => { cancelEdit(); setSelected(null); }}
+                  className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                  style={{ color: "hsl(var(--muted-foreground))" }}
+                  title="Закрыть"
+                >
+                  <Icon name="X" size={16} />
+                </button>
                 {editing ? (
                   <>
                     <button
