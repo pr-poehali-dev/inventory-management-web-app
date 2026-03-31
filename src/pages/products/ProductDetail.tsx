@@ -36,7 +36,7 @@ interface Props {
   onCancelEdit: () => void;
   onSaveEdit: () => void;
   onClose: () => void;
-  onPrint: () => void;
+  onGoToLabels: () => void;
   setF: <K extends keyof Product>(key: K, value: Product[K]) => void;
   addSupplierArticle: () => void;
   removeSupplierArticle: (i: number) => void;
@@ -51,7 +51,7 @@ export default function ProductDetail({
   onCancelEdit,
   onSaveEdit,
   onClose,
-  onPrint,
+  onGoToLabels,
   setF,
   addSupplierArticle,
   removeSupplierArticle,
@@ -61,11 +61,21 @@ export default function ProductDetail({
 
   return (
     <div
-      className="rounded-xl border h-full overflow-y-auto"
+      className="relative rounded-xl border h-full overflow-y-auto"
       style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--card))" }}
     >
+      {/* Крестик */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-muted transition-colors z-10"
+        style={{ color: "hsl(var(--muted-foreground))" }}
+        title="Закрыть"
+      >
+        <Icon name="X" size={16} />
+      </button>
+
       {/* Шапка */}
-      <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: "hsl(var(--border))" }}>
+      <div className="p-5 pr-10 border-b flex items-start justify-between gap-4" style={{ borderColor: "hsl(var(--border))" }}>
         <div className="flex-1 min-w-0">
           <div className="text-xs text-muted-foreground mb-1">{display.id}</div>
           {editing && form ? (
@@ -82,14 +92,6 @@ export default function ProductDetail({
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-muted transition-colors"
-            style={{ color: "hsl(var(--muted-foreground))" }}
-            title="Закрыть"
-          >
-            <Icon name="X" size={16} />
-          </button>
           {editing ? (
             <>
               <button
@@ -119,12 +121,12 @@ export default function ProductDetail({
                 Редактировать
               </button>
               <button
-                onClick={onPrint}
+                onClick={onGoToLabels}
                 className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md font-medium border"
                 style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}
               >
-                <Icon name="Printer" size={14} />
-                Ценник
+                <Icon name="Tag" size={14} />
+                Ценники и этикетки
               </button>
             </>
           )}

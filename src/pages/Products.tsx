@@ -7,7 +7,28 @@ import ProductPrintModal from "./products/ProductPrintModal";
 
 export type { Product, SupplierArticle };
 
-export default function Products() {
+interface Props {
+  onNavigate?: (page: string) => void;
+}
+
+function goToLabelsWithProduct(p: Product) {
+  try {
+    const raw = localStorage.getItem("labels_settings");
+    const existing = raw ? JSON.parse(raw) : {};
+    localStorage.setItem("labels_settings", JSON.stringify({
+      ...existing,
+      data: {
+        ...(existing.data ?? {}),
+        productName: p.name,
+        article: p.manufacturerArticle || p.id,
+        price: p.salePrice.toLocaleString("ru-RU"),
+        barcode: p.barcode || "",
+      },
+    }));
+  } catch (_) { /* ignore */ }
+}
+
+export default function Products({ onNavigate }: Props) {
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [selected, setSelected] = useState<Product | null>(null);
   const [editing, setEditing] = useState(false);
@@ -73,6 +94,11 @@ export default function Products() {
     });
   }
 
+  function handleGoToLabels(p: Product) {
+    goToLabelsWithProduct(p);
+    onNavigate?.("labels");
+  }
+
   return (
     <div className="flex gap-4 h-full">
       <ProductList
@@ -93,7 +119,7 @@ export default function Products() {
             onCancelEdit={cancelEdit}
             onSaveEdit={saveEdit}
             onClose={() => { cancelEdit(); setSelected(null); }}
-            onPrint={() => setPrintTarget(selected)}
+            onGoToLabels={() => handleGoToLabels(form ?? selected)}
             setF={setF}
             addSupplierArticle={addSupplierArticle}
             removeSupplierArticle={removeSupplierArticle}

@@ -24,7 +24,7 @@ const App = () => {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <Dashboard />;
-      case "products": return <Products />;
+      case "products": return <Products onNavigate={setPage} />;
       case "invoices": return <Invoices />;
       case "receiving": return <Receiving />;
       case "warehouse": return <Warehouse />;
