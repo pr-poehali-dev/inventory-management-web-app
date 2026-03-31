@@ -3,6 +3,7 @@ import InvoiceImport from "@/components/receiving/InvoiceImport";
 import EnrichmentImport from "@/components/receiving/EnrichmentImport";
 import MarkingImport from "@/components/receiving/MarkingImport";
 import { Invoice, InvoiceRow, NewInvoiceForm, initialInvoices } from "./invoicesTypes";
+import { mergeDuplicates, removeDuplicates } from "@/components/receiving/invoiceImportTypes";
 import { InvoiceNewDialog } from "./InvoiceNewDialog";
 import { InvoicesSidebar } from "./InvoicesSidebar";
 import { InvoiceDetail } from "./InvoiceDetail";
@@ -93,6 +94,18 @@ export default function Invoices() {
     );
   };
 
+  // ── Объединить дубли ───────────────────────────────────────────────────
+  const handleMergeDuplicates = () => {
+    if (!rows) return;
+    updateRows(mergeDuplicates(rows));
+  };
+
+  // ── Удалить лишние дубли ───────────────────────────────────────────────
+  const handleRemoveDuplicates = () => {
+    if (!rows) return;
+    updateRows(removeDuplicates(rows));
+  };
+
   // ── Передача в приёмку ─────────────────────────────────────────────────
   const handleSendToReceiving = () => {
     setInvoices((prev) =>
@@ -154,6 +167,8 @@ export default function Invoices() {
           onShowMarking={() => setShowMarking(true)}
           onSendToReceiving={handleSendToReceiving}
           onSaveHeader={handleSaveHeader}
+          onMergeDuplicates={handleMergeDuplicates}
+          onRemoveDuplicates={handleRemoveDuplicates}
         />
       </div>
     </>

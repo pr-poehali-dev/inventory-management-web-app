@@ -273,8 +273,27 @@ export function StepPreview({ rows, onBack, onImport, onClose }: StepPreviewProp
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
-                <td className="px-3 py-2 text-foreground">{row.name}</td>
+              <tr
+                key={i}
+                className="border-t"
+                style={{
+                  borderColor: "hsl(var(--border))",
+                  background: row._isDuplicate ? "hsl(var(--wms-red) / 0.06)" : undefined,
+                }}
+              >
+                <td className="px-3 py-2 text-foreground">
+                  <div className="flex items-center gap-2">
+                    <span>{row.name}</span>
+                    {row._isDuplicate && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                        style={{ background: "hsl(var(--wms-red) / 0.15)", color: "hsl(var(--wms-red))" }}
+                      >
+                        дубль
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2 font-mono text-muted-foreground">{row.supplierArticle || "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{row.brand || "—"}</td>
                 <td className="px-3 py-2 text-right text-foreground">{row.qty} {row.unit}</td>

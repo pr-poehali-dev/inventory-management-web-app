@@ -17,9 +17,11 @@ export interface InvoiceRow {
   _costWarning?: boolean;
   _candleAlert?: boolean;
   _candleQty?: number;
+  _isDuplicate?: boolean;
+  _duplicateKey?: string;
 }
 
-export type FieldKey = keyof Omit<InvoiceRow, "_costWarning" | "_candleAlert" | "_candleQty">;
+export type FieldKey = keyof Omit<InvoiceRow, "_costWarning" | "_candleAlert" | "_candleQty" | "_isDuplicate" | "_duplicateKey">;
 
 export const FIELDS: { key: FieldKey; label: string; required?: boolean }[] = [
   { key: "name", label: "Наименование", required: true },
@@ -142,8 +144,69 @@ export function parseRows(
     .filter(Boolean) as InvoiceRow[];
 }
 
-export function applyValidation(rows: InvoiceRow[]): InvoiceRow[] {
+// ─── Дубли ─────────────────────────────────────────────────────────────────
+
+/** Ключ идентичности: артикул поставщика → артикул производителя → название (нормализованное) */
+export function rowDuplicateKey(row: InvoiceRow): string {
+  if (row.supplierArticle.trim()) return `sa:${row.supplierArticle.trim().toLowerCase()}`;
+  if (row.manufacturerArticle.trim()) return `ma:${row.manufacturerArticle.trim().toLowerCase()}`;
+  return `nm:${row.name.trim().toLowerCase()}`;
+}
+
+/** Помечает дубли флагом _isDuplicate (первое вхождение — оригинал, остальные — дубли) */
+export function markDuplicates(rows: InvoiceRow[]): InvoiceRow[] {
+  const seen = new Map<string, number>();
   return rows.map((row) => {
+    const key = rowDuplicateKey(row);
+    if (seen.has(key)) {
+      return { ...row, _isDuplicate: true, _duplicateKey: key };
+    }
+    seen.set(key, 1);
+    return { ...row, _isDuplicate: false, _duplicateKey: key };
+  });
+}
+
+/** Объединяет дубли: суммирует qty, costTotal, объединяет маркировки, берёт max costPrice/salePrice */
+export function mergeDuplicates(rows: InvoiceRow[]): InvoiceRow[] {
+  const order: string[] = [];
+  const map = new Map<string, InvoiceRow>();
+
+  for (const row of rows) {
+    const key = rowDuplicateKey(row);
+    if (map.has(key)) {
+      const base = map.get(key)!;
+      map.set(key, {
+        ...base,
+        qty: base.qty + row.qty,
+        costTotal: base.costTotal + row.costTotal,
+        costPrice: Math.max(base.costPrice, row.costPrice),
+        salePrice: Math.max(base.salePrice, row.salePrice),
+        marking: [...base.marking, ...row.marking.filter((m) => !base.marking.includes(m))],
+        _isDuplicate: false,
+      });
+    } else {
+      order.push(key);
+      map.set(key, { ...row, _isDuplicate: false });
+    }
+  }
+
+  return order.map((k) => map.get(k)!);
+}
+
+/** Удаляет дубли — оставляет только первое вхождение каждого ключа */
+export function removeDuplicates(rows: InvoiceRow[]): InvoiceRow[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = rowDuplicateKey(row);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function applyValidation(rows: InvoiceRow[]): InvoiceRow[] {
+  const withDuplicates = markDuplicates(rows);
+  return withDuplicates.map((row) => {
     const r = { ...row };
 
     // Проверка расхождения себестоимости >3%

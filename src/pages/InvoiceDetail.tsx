@@ -18,6 +18,8 @@ interface InvoiceDetailProps {
   onShowMarking: () => void;
   onSendToReceiving: () => void;
   onSaveHeader: (draft: HeaderDraft) => void;
+  onMergeDuplicates: () => void;
+  onRemoveDuplicates: () => void;
 }
 
 export function InvoiceDetail({
@@ -29,6 +31,8 @@ export function InvoiceDetail({
   onShowMarking,
   onSendToReceiving,
   onSaveHeader,
+  onMergeDuplicates,
+  onRemoveDuplicates,
 }: InvoiceDetailProps) {
   const [editingHeader, setEditingHeader] = useState(false);
   const [headerDraft, setHeaderDraft] = useState<HeaderDraft>({ supplier: "", docNumber: "", date: "" });
@@ -211,6 +215,8 @@ export function InvoiceDetail({
           rows={rows}
           onEnrich={onShowEnrich}
           onMarking={onShowMarking}
+          onMergeDuplicates={onMergeDuplicates}
+          onRemoveDuplicates={onRemoveDuplicates}
         />
       )}
 
@@ -246,9 +252,22 @@ export function InvoiceDetail({
               </thead>
               <tbody>
                 {rows.map((row, i) => (
-                  <tr key={i}>
+                  <tr
+                    key={i}
+                    style={row._isDuplicate ? { background: "hsl(var(--wms-red) / 0.06)" } : undefined}
+                  >
                     <td>
-                      <div className="font-medium text-sm text-foreground">{row.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-sm text-foreground">{row.name}</div>
+                        {row._isDuplicate && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded font-semibold"
+                            style={{ background: "hsl(var(--wms-red) / 0.15)", color: "hsl(var(--wms-red))" }}
+                          >
+                            дубль
+                          </span>
+                        )}
+                      </div>
                       {row.oem && (
                         <div className="text-[10px] text-muted-foreground mono">{row.oem}</div>
                       )}
