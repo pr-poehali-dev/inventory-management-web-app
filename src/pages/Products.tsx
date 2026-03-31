@@ -100,7 +100,7 @@ export default function Products({ onNavigate }: Props) {
   }
 
   return (
-    <div className="relative flex gap-4 h-full">
+    <div className="relative h-full">
       <ProductList
         products={products}
         selectedId={selected?.id ?? null}
@@ -108,14 +108,6 @@ export default function Products({ onNavigate }: Props) {
         onEdit={startEdit}
         onPrint={setPrintTarget}
       />
-
-      {/* Подсказка когда нет открытой карточки */}
-      {!selected && (
-        <div className="flex-1 flex flex-col items-center justify-center h-full text-center gap-3 text-muted-foreground">
-          <Icon name="Package" size={40} className="opacity-20" />
-          <div className="text-sm">Двойной клик на товар — откроется карточка</div>
-        </div>
-      )}
 
       {/* Карточка товара — перекрывает список абсолютно */}
       {selected && (

@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { Product, fmt } from "./products.types";
 
+/* ── Тултип поставщика ─────────────────────────────────────────── */
 function SupplierTooltip({ text, children }: { text: string; children: React.ReactNode }) {
   const [show, setShow] = useState(false);
   return (
@@ -20,29 +21,68 @@ function SupplierTooltip({ text, children }: { text: string; children: React.Rea
   );
 }
 
-function CopyChip({ value, label }: { value: string; label?: string }) {
+/* ── Кликабельный текст с копированием и подсветкой ────────────── */
+function CopyText({ value, className = "" }: { value: string; className?: string }) {
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
   const copy = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (!value || value === "—") return;
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
+      setTimeout(() => setCopied(false), 1400);
     });
   }, [value]);
 
   return (
     <span
       onClick={copy}
-      title={`Скопировать${label ? `: ${label}` : ""}`}
-      className="cursor-pointer select-none transition-colors rounded px-0.5"
-      style={{ color: copied ? "hsl(var(--wms-green))" : undefined }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title="Нажмите, чтобы скопировать"
+      className={"cursor-pointer select-none rounded-sm px-0.5 -mx-0.5 transition-all duration-100 " + className}
+      style={{
+        background: copied
+          ? "hsl(var(--wms-green) / 0.15)"
+          : hovered
+          ? "hsl(var(--wms-blue) / 0.12)"
+          : "transparent",
+        color: copied ? "hsl(var(--wms-green))" : undefined,
+        outline: hovered && !copied ? "1px solid hsl(var(--wms-blue) / 0.3)" : "none",
+      }}
     >
-      {copied ? "✓" : value}
+      {copied ? "✓ скопировано" : value}
     </span>
   );
 }
 
+/* ── Просмотр фото ──────────────────────────────────────────────── */
+function PhotoViewer({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.85)" }}
+      onClick={onClose}
+    >
+      <img
+        src={src}
+        alt="фото"
+        className="max-w-[90vw] max-h-[90vh] rounded-xl object-contain shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        className="absolute top-4 right-4 p-2 rounded-full"
+        style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}
+        onClick={onClose}
+      >
+        <Icon name="X" size={20} />
+      </button>
+    </div>
+  );
+}
+
+/* ── Фильтр ─────────────────────────────────────────────────────── */
 type VisibleField = "barcode" | "article" | "supplier" | "price" | "qty" | "cells";
 
 const FIELD_LABELS: Record<VisibleField, string> = {
@@ -55,14 +95,11 @@ const FIELD_LABELS: Record<VisibleField, string> = {
 };
 
 const DEFAULT_FIELDS: Record<VisibleField, boolean> = {
-  barcode: true,
-  article: true,
-  supplier: true,
-  price: true,
-  qty: true,
-  cells: true,
+  barcode: true, article: true, supplier: true,
+  price: true, qty: true, cells: true,
 };
 
+/* ── Props ──────────────────────────────────────────────────────── */
 interface Props {
   products: Product[];
   selectedId: string | null;
@@ -71,10 +108,14 @@ interface Props {
   onPrint: (p: Product) => void;
 }
 
+/* ── Компонент ──────────────────────────────────────────────────── */
 export default function ProductList({ products, selectedId, onRowClick, onEdit, onPrint }: Props) {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [visible, setVisible] = useState<Record<VisibleField, boolean>>(DEFAULT_FIELDS);
+  const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const [editPhotoFor, setEditPhotoFor] = useState<Product | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const toggleField = (f: VisibleField) => setVisible((v) => ({ ...v, [f]: !v[f] }));
 
@@ -90,8 +131,15 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
     );
   });
 
+  function handlePhotoContext(e: React.MouseEvent, p: Product) {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditPhotoFor(p);
+    fileRef.current?.click();
+  }
+
   return (
-    <div className="w-96 flex-shrink-0 flex flex-col gap-3">
+    <div className="w-full flex-shrink-0 flex flex-col gap-3">
       {/* Заголовок */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium text-muted-foreground">Товары</span>
@@ -116,12 +164,7 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                 <div className="text-[11px] text-muted-foreground font-medium mb-1 uppercase tracking-wide">Показывать</div>
                 {(Object.keys(FIELD_LABELS) as VisibleField[]).map((f) => (
                   <label key={f} className="flex items-center gap-2 cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={visible[f]}
-                      onChange={() => toggleField(f)}
-                      className="accent-primary w-3.5 h-3.5"
-                    />
+                    <input type="checkbox" checked={visible[f]} onChange={() => toggleField(f)} className="accent-primary w-3.5 h-3.5" />
                     <span className="text-foreground">{FIELD_LABELS[f]}</span>
                   </label>
                 ))}
@@ -151,7 +194,7 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
       </div>
 
       {/* Список */}
-      <div className="flex-1 overflow-y-auto space-y-1" onClick={() => showFilter && setShowFilter(false)}>
+      <div className="flex-1 overflow-y-auto space-y-1.5" onClick={() => showFilter && setShowFilter(false)}>
         {filtered.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-8">Ничего не найдено</div>
         )}
@@ -165,56 +208,58 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
               key={p.id}
               onDoubleClick={() => onRowClick(p)}
               onClick={() => onRowClick(p)}
-              className="flex gap-3 px-3 py-3 rounded-lg cursor-pointer select-none transition-all border"
+              className="flex gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all border"
               style={{
                 borderColor: isActive ? "hsl(var(--wms-blue) / 0.4)" : "hsl(var(--border) / 0.6)",
                 background: isActive ? "hsl(var(--wms-blue) / 0.07)" : "hsl(var(--card))",
               }}
             >
-              {/* Фото */}
+              {/* Фото — ЛКМ просмотр, ПКМ редактировать */}
               <div
-                className="w-16 h-16 rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center"
+                className="w-20 h-20 rounded-md flex-shrink-0 overflow-hidden flex items-center justify-center relative group"
                 style={{ background: "hsl(var(--wms-surface-2))" }}
+                onClick={(e) => { e.stopPropagation(); if (p.photo) setViewPhoto(p.photo); }}
+                onContextMenu={(e) => handlePhotoContext(e, p)}
+                title={p.photo ? "ЛКМ — просмотр, ПКМ — изменить фото" : "ПКМ — добавить фото"}
               >
                 {p.photo ? (
-                  <img src={p.photo} alt="" className="w-full h-full object-cover" />
+                  <>
+                    <img src={p.photo} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Icon name="ZoomIn" size={20} className="text-white" />
+                    </div>
+                  </>
                 ) : (
-                  <Icon name="Package" size={24} className="text-muted-foreground opacity-30" />
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground opacity-40 group-hover:opacity-70 transition-opacity">
+                    <Icon name="ImagePlus" size={22} />
+                  </div>
                 )}
               </div>
 
               {/* Данные */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                {/* Название — кликабельно для копирования */}
-                <div
-                  className="text-sm font-medium text-foreground leading-snug"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(p.name);
-                  }}
-                  title="Нажмите, чтобы скопировать название"
-                >
-                  <CopyChip value={p.name} label="название" />
+              <div className="flex-1 min-w-0 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                {/* Название */}
+                <div className="text-base font-semibold text-foreground leading-snug">
+                  <CopyText value={p.name} />
                 </div>
 
                 {/* Штрихкод */}
                 {visible.barcode && p.barcode && (
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Icon name="Barcode" size={10} className="opacity-50 flex-shrink-0" />
-                    <CopyChip value={p.barcode} label="штрихкод" />
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Icon name="Barcode" size={12} className="opacity-50 flex-shrink-0" />
+                    <CopyText value={p.barcode} />
                   </div>
                 )}
 
-                {/* Артикул изготовителя */}
-                {visible.article && p.manufacturerArticle && (
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Icon name="Hash" size={10} className="opacity-50 flex-shrink-0" />
-                    <CopyChip value={p.manufacturerArticle} label="артикул" />
+                {/* Артикул + OEM */}
+                {visible.article && (p.manufacturerArticle || p.oem) && (
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
+                    <Icon name="Hash" size={12} className="opacity-50 flex-shrink-0" />
+                    {p.manufacturerArticle && <CopyText value={p.manufacturerArticle} />}
                     {p.oem && (
                       <>
-                        <span className="opacity-30">·</span>
-                        <span className="text-[10px] opacity-60">OEM:</span>
-                        <CopyChip value={p.oem} label="OEM" />
+                        <span className="opacity-30 text-xs">OEM</span>
+                        <CopyText value={p.oem} />
                       </>
                     )}
                   </div>
@@ -222,17 +267,14 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
 
                 {/* Артикулы поставщиков */}
                 {visible.supplier && p.supplierArticles.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-0.5">
+                  <div className="flex flex-wrap gap-1">
                     {p.supplierArticles.map((sa, i) => (
                       <SupplierTooltip key={i} text={sa.supplierName}>
                         <span
-                          className="text-[10px] px-1.5 py-0.5 rounded cursor-pointer"
-                          style={{ background: "hsl(var(--wms-blue) / 0.1)", color: "hsl(var(--wms-blue))" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(sa.article);
-                          }}
-                          title={`Скопировать: ${sa.article}`}
+                          className="text-xs px-2 py-0.5 rounded cursor-pointer transition-all hover:brightness-110"
+                          style={{ background: "hsl(var(--wms-blue) / 0.12)", color: "hsl(var(--wms-blue))" }}
+                          onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(sa.article); }}
+                          title={`${sa.supplierName} — нажмите для копирования`}
                         >
                           {sa.article}
                         </span>
@@ -242,10 +284,10 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                 )}
 
                 {/* Остаток + ячейки */}
-                <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                <div className="flex items-center flex-wrap gap-1.5 mt-0.5">
                   {visible.qty && (
                     <div
-                      className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                      className="text-xs font-medium px-2 py-0.5 rounded"
                       style={
                         isOut
                           ? { background: "hsl(var(--wms-red) / 0.12)", color: "hsl(var(--wms-red))" }
@@ -257,10 +299,10 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                       {p.qty} {p.unit}{isLow && " ⚠"}
                     </div>
                   )}
-                  {visible.cells && p.cells.length > 0 && p.cells.map((c, i) => (
+                  {visible.cells && p.cells.map((c, i) => (
                     <span
                       key={i}
-                      className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                      className="text-xs font-mono px-2 py-0.5 rounded"
                       style={{ background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }}
                     >
                       {c}
@@ -269,10 +311,10 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                 </div>
               </div>
 
-              {/* Правая колонка: цена + кнопки */}
+              {/* Цена + кнопки */}
               <div className="flex flex-col items-end justify-between flex-shrink-0 gap-1" onClick={(e) => e.stopPropagation()}>
                 {visible.price && (
-                  <div className="text-sm font-semibold" style={{ color: "hsl(var(--wms-blue))" }}>
+                  <div className="text-base font-bold" style={{ color: "hsl(var(--wms-blue))" }}>
                     {fmt(p.salePrice)} ₽
                   </div>
                 )}
@@ -283,7 +325,7 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                     style={{ color: "hsl(var(--muted-foreground))" }}
                     title="Редактировать"
                   >
-                    <Icon name="Pencil" size={13} />
+                    <Icon name="Pencil" size={14} />
                   </button>
                   <button
                     onClick={() => onPrint(p)}
@@ -291,7 +333,7 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
                     style={{ color: "hsl(var(--muted-foreground))" }}
                     title="Печать ценника"
                   >
-                    <Icon name="Printer" size={13} />
+                    <Icon name="Printer" size={14} />
                   </button>
                 </div>
               </div>
@@ -299,6 +341,43 @@ export default function ProductList({ products, selectedId, onRowClick, onEdit, 
           );
         })}
       </div>
+
+      {/* Просмотр фото на весь экран */}
+      {viewPhoto && <PhotoViewer src={viewPhoto} onClose={() => setViewPhoto(null)} />}
+
+      {/* Скрытый input для замены фото через ПКМ */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file || !editPhotoFor) return;
+          e.target.value = "";
+          const confirmed = window.confirm(`Заменить фото товара «${editPhotoFor.name}»?`);
+          if (!confirmed) { setEditPhotoFor(null); return; }
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              canvas.width = 650; canvas.height = 650;
+              const ctx = canvas.getContext("2d")!;
+              const asp = img.naturalWidth / img.naturalHeight;
+              let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+              if (asp > 1) { sx = (sw - sh) / 2; sw = sh; }
+              else if (asp < 1) { sy = (sh - sw) / 2; sh = sw; }
+              ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 650, 650);
+              const dataUrl = canvas.toDataURL("image/webp", 0.88);
+              editPhotoFor.photo = dataUrl;
+              setEditPhotoFor(null);
+            };
+            img.src = reader.result as string;
+          };
+          reader.readAsDataURL(file);
+        }}
+      />
     </div>
   );
 }
