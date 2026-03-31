@@ -16,6 +16,7 @@ export interface Product {
   barcode: string;
   oem: string;
   photo: string;
+  cells: string[];
   supplierArticles: SupplierArticle[];
 }
 
@@ -42,6 +43,7 @@ export const MOCK_PRODUCTS: Product[] = [
     barcode: "4600000012345",
     oem: "",
     photo: "",
+    cells: ["А-01-3", "А-01-4"],
     supplierArticles: [
       { supplierName: "ЭлектроОптТорг", article: "KAB-VVG-325" },
       { supplierName: "МегаКабель", article: "VVG3x2.5-BLK" },
@@ -60,6 +62,7 @@ export const MOCK_PRODUCTS: Product[] = [
     barcode: "4600000023456",
     oem: "BA47-29",
     photo: "",
+    cells: ["Б-03-1"],
     supplierArticles: [
       { supplierName: "ЭлектроОптТорг", article: "IEK-MCB16-C" },
     ],
@@ -77,6 +80,7 @@ export const MOCK_PRODUCTS: Product[] = [
     barcode: "3414971094536",
     oem: "",
     photo: "",
+    cells: [],
     supplierArticles: [
       { supplierName: "Промэлектро", article: "LGR-SK2Z-W" },
     ],
@@ -94,6 +98,7 @@ export const MOCK_PRODUCTS: Product[] = [
     barcode: "4600000034567",
     oem: "",
     photo: "",
+    cells: ["В-05-2"],
     supplierArticles: [
       { supplierName: "МегаКабель", article: "EKF-BOX12N" },
       { supplierName: "Промэлектро", article: "BX-N12-EKF" },

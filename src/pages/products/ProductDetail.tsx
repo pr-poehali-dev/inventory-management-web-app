@@ -251,7 +251,7 @@ export default function ProductDetail({
                         </select>
                       </td>
                     </tr>
-                    <tr>
+                    <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                       <td className="text-muted-foreground px-3 py-2">Мин. остаток</td>
                       <td className="px-3 py-2">
                         <input
@@ -259,6 +259,17 @@ export default function ProductDetail({
                           className={inputCls}
                           value={form.lowStockThreshold}
                           onChange={(e) => setF("lowStockThreshold", Number(e.target.value))}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="text-muted-foreground px-3 py-2">Ячейки</td>
+                      <td className="px-3 py-2">
+                        <input
+                          className={inputCls}
+                          placeholder="А-01-1, Б-02-3"
+                          value={form.cells.join(", ")}
+                          onChange={(e) => setF("cells", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
                         />
                       </td>
                     </tr>
@@ -271,6 +282,7 @@ export default function ProductDetail({
                     { label: "OEM", value: display.oem || "—" },
                     { label: "Единица", value: display.unit },
                     { label: "Мин. остаток", value: `${display.lowStockThreshold} ${display.unit}` },
+                    { label: "Ячейки", value: display.cells.length ? display.cells.join(", ") : "—" },
                   ].map(({ label, value }, i, arr) => (
                     <tr key={label} className={i < arr.length - 1 ? "border-b" : ""} style={{ borderColor: "hsl(var(--border))" }}>
                       <td className="text-muted-foreground px-3 py-2 w-36">{label}</td>
