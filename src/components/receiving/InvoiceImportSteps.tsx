@@ -186,11 +186,11 @@ export function StepMapping({
               )?.[header];
               return (
               <tr key={idx} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
-                <td className="px-4 py-2 font-mono text-xs text-foreground">{header}</td>
-                <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-[180px]">
+                <td className="px-4 py-1 font-mono text-xs text-foreground">{header}</td>
+                <td className="px-4 py-1 text-xs text-muted-foreground truncate max-w-[180px]">
                   {sampleVal !== undefined ? String(sampleVal) : <span className="opacity-40 italic">пусто</span>}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-1">
                   <select
                     value={mapping[header] ?? ""}
                     onChange={(e) => onMappingChange(header, (e.target.value as FieldKey) || null)}
