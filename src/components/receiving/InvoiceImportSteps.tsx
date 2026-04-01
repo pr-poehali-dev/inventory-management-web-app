@@ -180,11 +180,15 @@ export function StepMapping({
             </tr>
           </thead>
           <tbody>
-            {headers.map((header, idx) => (
+            {headers.map((header, idx) => {
+              const sampleVal = rawRows.find(
+                (r) => r[header] !== undefined && r[header] !== null && String(r[header]).trim() !== ""
+              )?.[header];
+              return (
               <tr key={idx} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
                 <td className="px-4 py-2 font-mono text-xs text-foreground">{header}</td>
                 <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-[180px]">
-                  {String(rawRows[0]?.[header] ?? "—")}
+                  {sampleVal !== undefined ? String(sampleVal) : <span className="opacity-40 italic">пусто</span>}
                 </td>
                 <td className="px-4 py-2">
                   <select
@@ -206,7 +210,8 @@ export function StepMapping({
                   </select>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
