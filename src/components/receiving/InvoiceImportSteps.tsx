@@ -180,8 +180,8 @@ export function StepMapping({
             </tr>
           </thead>
           <tbody>
-            {headers.map((header) => (
-              <tr key={header} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
+            {headers.map((header, idx) => (
+              <tr key={idx} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
                 <td className="px-4 py-2 font-mono text-xs text-foreground">{header}</td>
                 <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-[180px]">
                   {String(rawRows[0]?.[header] ?? "—")}

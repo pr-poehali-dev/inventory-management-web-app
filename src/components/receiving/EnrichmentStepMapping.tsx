@@ -75,8 +75,8 @@ export function EnrichmentStepMapping({
             </tr>
           </thead>
           <tbody>
-            {headers.map((h) => (
-              <tr key={h} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
+            {headers.map((h, idx) => (
+              <tr key={idx} className="border-t" style={{ borderColor: "hsl(var(--border))" }}>
                 <td className="px-4 py-2 font-mono text-xs text-foreground">{h}</td>
                 <td className="px-4 py-2 text-xs text-muted-foreground truncate max-w-[160px]">
                   {String(rawRows[0]?.[h] ?? "—")}

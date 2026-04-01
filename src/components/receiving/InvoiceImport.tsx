@@ -39,17 +39,49 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
   const [candleQueue, setCandleQueue] = useState<number[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // ── Нормализация заголовков: убираем пустые/__EMPTY и дубли ──────────
+  const normalizeHeaders = useCallback(
+    (hdrs: string[], rows2: Record<string, unknown>[]): [string[], Record<string, unknown>[]] => {
+      // Переименовываем проблемные заголовки
+      const seen = new Map<string, number>();
+      const normalized = hdrs.map((h, i) => {
+        let name = h.trim();
+        // XLSX генерирует __EMPTY, __EMPTY_1 и т.д. для пустых столбцов
+        if (!name || name.startsWith("__EMPTY")) {
+          name = `Столбец_${i + 1}`;
+        }
+        // Если имя уже встречалось — добавляем суффикс
+        const count = seen.get(name) ?? 0;
+        seen.set(name, count + 1);
+        return count > 0 ? `${name}_${count}` : name;
+      });
+
+      // Если заголовок изменился — переименовываем ключи в строках данных
+      const renamedRows = rows2.map((row) => {
+        const newRow: Record<string, unknown> = {};
+        hdrs.forEach((oldKey, i) => {
+          newRow[normalized[i]] = row[oldKey];
+        });
+        return newRow;
+      });
+
+      return [normalized, renamedRows];
+    },
+    []
+  );
+
   // ── Применяем шаблон поставщика если есть ─────────────────────────────
   const applyTemplate = useCallback(
     (hdrs: string[], rows2: Record<string, unknown>[]) => {
+      const [normHdrs, normRows] = normalizeHeaders(hdrs, rows2);
       const tpl = templates.find((t) => t.supplier === supplierName);
-      const detected = tpl ? tpl.mapping : autoDetectMapping(hdrs);
-      setHeaders(hdrs);
-      setRawRows(rows2);
+      const detected = tpl ? tpl.mapping : autoDetectMapping(normHdrs);
+      setHeaders(normHdrs);
+      setRawRows(normRows);
       setMapping(detected as Record<string, FieldKey | null>);
       setStep("mapping");
     },
-    [templates, supplierName]
+    [templates, supplierName, normalizeHeaders]
   );
 
   // ── Парсинг Excel ──────────────────────────────────────────────────────
