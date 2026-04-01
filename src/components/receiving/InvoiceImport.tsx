@@ -57,7 +57,52 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
     (buffer: ArrayBuffer) => {
       const wb = XLSX.read(buffer, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+
+      // Пробуем найти строку с заголовками таблицы
+      // Сначала читаем весь лист как массив массивов
+      const allRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+
+      // Ключевые слова, которые указывают на строку-заголовок таблицы товаров
+      const headerKeywords = [
+        "наименование", "название", "товар", "артикул", "количество",
+        "кол-во", "цена", "сумма", "бренд", "производитель",
+        "name", "description", "article", "qty", "price", "amount",
+        "номенклатура", "позиция", "код"
+      ];
+
+      let headerRowIdx = -1;
+      for (let i = 0; i < Math.min(allRows.length, 50); i++) {
+        const row = allRows[i] as unknown[];
+        const rowStr = row.map(c => String(c ?? "").toLowerCase()).join(" ");
+        const matches = headerKeywords.filter(kw => rowStr.includes(kw));
+        if (matches.length >= 2) {
+          headerRowIdx = i;
+          break;
+        }
+      }
+
+      let data: Record<string, unknown>[];
+      if (headerRowIdx > 0) {
+        // Берём заголовки из найденной строки и данные начиная со следующей
+        const headers = (allRows[headerRowIdx] as unknown[]).map((h, i) => {
+          const str = String(h ?? "").trim();
+          return str || `Столбец_${i + 1}`;
+        });
+        data = [];
+        for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+          const rawRow = allRows[i] as unknown[];
+          // Пропускаем пустые строки и строки-итоги
+          const hasContent = rawRow.some(c => String(c ?? "").trim() !== "");
+          if (!hasContent) continue;
+          const obj: Record<string, unknown> = {};
+          headers.forEach((h, j) => { obj[h] = rawRow[j] ?? ""; });
+          data.push(obj);
+        }
+      } else {
+        // Стандартный режим — заголовки из первой строки
+        data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+      }
+
       if (!data.length) return;
       applyTemplate(Object.keys(data[0]), data);
     },

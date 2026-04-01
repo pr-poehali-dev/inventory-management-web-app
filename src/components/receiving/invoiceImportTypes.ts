@@ -40,14 +40,14 @@ export const FIELDS: { key: FieldKey; label: string; required?: boolean }[] = [
 
 // Ключевые слова для автораспознавания
 export const FIELD_HINTS: Record<FieldKey, string[]> = {
-  name: ["наименование", "название", "товар", "продукт", "name", "description", "номенклатура", "позиция"],
-  supplierArticle: ["артикул поставщика", "арт поставщика", "supplier art", "артикул пост"],
-  manufacturerArticle: ["артикул изготовителя", "артикул производителя", "manufacturer art", "арт произв", "арт изг"],
-  brand: ["бренд", "производитель", "brand", "manufacturer", "торговая марка"],
+  name: ["наименование", "название", "товар", "продукт", "name", "description", "номенклатура", "позиция", "товары (работы", "работы, услуги"],
+  supplierArticle: ["артикул поставщика", "арт поставщика", "supplier art", "артикул пост", "код"],
+  manufacturerArticle: ["артикул изготовителя", "артикул производителя", "manufacturer art", "арт произв", "арт изг", "артикул"],
+  brand: ["бренд", "производитель", "brand", "manufacturer", "торговая марка", "изготовитель"],
   qty: ["количество", "кол-во", "кол.", "qty", "count", "шт", "единиц"],
   unit: ["единица", "ед.изм", "ед.", "unit", "мера"],
-  costPrice: ["себестоимость", "цена закупки", "закупочная цена", "cost", "закупка", "цена прихода"],
-  costTotal: ["сумма себестоимости", "сумма закупки", "итого закупка", "total cost", "сумма прихода"],
+  costPrice: ["себестоимость", "цена закупки", "закупочная цена", "cost", "закупка", "цена прихода", "цена"],
+  costTotal: ["сумма себестоимости", "сумма закупки", "итого закупка", "total cost", "сумма прихода", "сумма"],
   salePrice: ["цена продажная", "цена продажи", "розничная цена", "sale price", "продажа", "розница"],
   photo: ["фото", "изображение", "image", "photo", "картинка"],
   oem: ["oem", "oeм", "ое м", "аналог", "cross"],
@@ -91,15 +91,23 @@ export function autoDetectMapping(headers: string[]): Record<string, FieldKey | 
   for (const header of headers) {
     const hl = header.toLowerCase().trim();
     let matched: FieldKey | null = null;
+    let bestMatchLen = 0;
 
+    // Ищем наилучшее совпадение (самое длинное ключевое слово — приоритетнее)
     for (const [fieldKey, hints] of Object.entries(FIELD_HINTS) as [FieldKey, string[]][]) {
       if (used.has(fieldKey)) continue;
-      if (hints.some((hint) => hl.includes(hint) || hint.includes(hl))) {
-        matched = fieldKey;
-        used.add(fieldKey);
-        break;
+      for (const hint of hints) {
+        if (hl.includes(hint) || hint.includes(hl)) {
+          const matchLen = hint.length;
+          if (matchLen > bestMatchLen) {
+            bestMatchLen = matchLen;
+            matched = fieldKey;
+          }
+        }
       }
     }
+
+    if (matched) used.add(matched);
     mapping[header] = matched;
   }
   return mapping;
