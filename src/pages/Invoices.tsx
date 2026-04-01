@@ -106,6 +106,18 @@ export default function Invoices() {
     updateRows(removeDuplicates(rows));
   };
 
+  // ── Удалить строку по индексу ──────────────────────────────────────────
+  const handleDeleteRow = (index: number) => {
+    if (!rows) return;
+    updateRows(rows.filter((_, i) => i !== index));
+  };
+
+  // ── Удалить пустые строки (без наименования) ───────────────────────────
+  const handleDeleteEmptyRows = () => {
+    if (!rows) return;
+    updateRows(rows.filter((r) => r.name?.trim()));
+  };
+
   // ── Передача в приёмку ─────────────────────────────────────────────────
   const handleSendToReceiving = () => {
     setInvoices((prev) =>
