@@ -16,7 +16,7 @@ const FIELDS: ValidationField[] = [
   { key: "photo", label: "Фото товара", icon: "Image", enrichable: true },
   { key: "costPrice", label: "Себестоимость", icon: "Wallet", enrichable: false },
   { key: "salePrice", label: "Цена продажная", icon: "CircleDollarSign", enrichable: true },
-  { key: "marking", label: "Коды маркировки", icon: "QrCode", enrichable: false },
+  { key: "marking", label: "Коды маркировки", icon: "QrCode", enrichable: true },
 ];
 
 function fieldFilled(row: InvoiceRow, key: keyof InvoiceRow): boolean {

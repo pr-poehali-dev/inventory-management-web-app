@@ -72,17 +72,22 @@ export function EnrichmentStepPreview({
               <th className="text-left px-3 py-2 text-muted-foreground font-medium">Бренд</th>
               <th className="text-left px-3 py-2 text-muted-foreground font-medium">OEM</th>
               <th className="text-right px-3 py-2 text-muted-foreground font-medium">Цена прод.</th>
+              <th className="text-left px-3 py-2 text-muted-foreground font-medium">Штрихкоды</th>
             </tr>
           </thead>
           <tbody>
             {enrichedRows.map((row, i) => {
               const original = originalRows[i];
+              const markingChanged =
+                (row.marking?.length ?? 0) !== (original.marking?.length ?? 0) ||
+                row.marking?.some((m, mi) => m !== original.marking?.[mi]);
               const changed =
                 row.supplierArticle !== original.supplierArticle ||
                 row.manufacturerArticle !== original.manufacturerArticle ||
                 row.brand !== original.brand ||
                 row.oem !== original.oem ||
-                row.salePrice !== original.salePrice;
+                row.salePrice !== original.salePrice ||
+                markingChanged;
               return (
                 <tr
                   key={i}
@@ -117,6 +122,12 @@ export function EnrichmentStepPreview({
                     <EnrichCell
                       original={original.salePrice > 0 ? `${original.salePrice} ₽` : ""}
                       updated={row.salePrice > 0 ? `${row.salePrice} ₽` : ""}
+                    />
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs max-w-[180px]">
+                    <EnrichCell
+                      original={(original.marking ?? []).join(", ")}
+                      updated={(row.marking ?? []).join(", ")}
                     />
                   </td>
                 </tr>

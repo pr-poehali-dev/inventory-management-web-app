@@ -34,7 +34,21 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
   // ── Обработка загруженных данных ──────────────────────────────────────
   const processRaw = useCallback((data: Record<string, unknown>[]) => {
     if (!data.length) return;
-    const hdrs = Object.keys(data[0]);
+    const allHdrs = Object.keys(data[0]);
+
+    // Фильтруем пустые/__EMPTY столбцы и столбцы без данных
+    const hdrs = allHdrs.filter((h) => {
+      const name = h.trim();
+      if (!name || name.startsWith("__EMPTY")) return false;
+      // Проверяем, есть ли хоть одно непустое значение в этом столбце
+      return data.some((row) => {
+        const v = row[h];
+        return v !== undefined && v !== null && String(v).trim() !== "";
+      });
+    });
+
+    if (!hdrs.length) return;
+
     setHeaders(hdrs);
     setRawRows(data);
 

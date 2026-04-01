@@ -56,16 +56,34 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
         return count > 0 ? `${name}_${count}` : name;
       });
 
-      // Если заголовок изменился — переименовываем ключи в строках данных
+      // Определяем столбцы, в которых есть хоть какие-то данные
+      const colHasData = normalized.map((_, i) => {
+        const oldKey = hdrs[i];
+        return rows2.some((row) => {
+          const v = row[oldKey];
+          return v !== undefined && v !== null && String(v).trim() !== "";
+        });
+      });
+
+      // Оставляем только столбцы с данными (или с осмысленным заголовком)
+      const keepIdx = normalized.map((name, i) =>
+        colHasData[i] || !name.startsWith("Столбец_")
+      );
+
+      const filteredHeaders = normalized.filter((_, i) => keepIdx[i]);
+
+      // Если заголовок изменился — переименовываем ключи в строках данных (только нужные столбцы)
       const renamedRows = rows2.map((row) => {
         const newRow: Record<string, unknown> = {};
         hdrs.forEach((oldKey, i) => {
-          newRow[normalized[i]] = row[oldKey];
+          if (keepIdx[i]) {
+            newRow[normalized[i]] = row[oldKey];
+          }
         });
         return newRow;
       });
 
-      return [normalized, renamedRows];
+      return [filteredHeaders, renamedRows];
     },
     []
   );
