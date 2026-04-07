@@ -111,15 +111,30 @@ export default function Receiving() {
     setConflictModal(null);
   };
 
-  /* Фильтрация документов */
+  /* Фильтрация документов — включая поиск по штрихкодам и артикулам товаров */
   const filteredDocs = docs.filter((d) => {
-    const q = docSearch.toLowerCase();
-    return (
+    const q = docSearch.toLowerCase().trim();
+    if (!q) return true;
+    if (
       d.id.toLowerCase().includes(q) ||
       d.supplier.toLowerCase().includes(q) ||
       d.doc.toLowerCase().includes(q)
+    ) return true;
+    // Поиск по штрихкодам и артикулам позиций
+    return d.items.some((it) =>
+      it.barcodes.some((b) => b.toLowerCase().includes(q)) ||
+      it.art.toLowerCase().includes(q)
     );
   });
+
+  /* Автовыбор документа при поиске по штрихкоду — если найден ровно один */
+  useEffect(() => {
+    const q = docSearch.trim();
+    if (!q || filteredDocs.length !== 1) return;
+    if (filteredDocs[0].id !== selectedDocId) {
+      setSelectedDocId(filteredDocs[0].id);
+    }
+  }, [filteredDocs, docSearch]);
 
   /* Фильтрация позиций в выбранном документе */
   const filteredItems = selectedDoc.items.filter((it) =>
