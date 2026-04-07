@@ -16,7 +16,6 @@ const FIELDS: ValidationField[] = [
   { key: "photo", label: "Фото товара", icon: "Image", enrichable: true },
   { key: "costPrice", label: "Себестоимость", icon: "Wallet", enrichable: false },
   { key: "salePrice", label: "Цена продажная", icon: "CircleDollarSign", enrichable: true },
-  { key: "marking", label: "Коды маркировки", icon: "QrCode", enrichable: true },
 ];
 
 function fieldFilled(row: InvoiceRow, key: keyof InvoiceRow): boolean {
@@ -78,7 +77,7 @@ export default function InvoiceValidation({ rows, onEnrich, onMarking, onMergeDu
 
   if (!rows.length) return null;
 
-  const hasIssues = !v.hasBarcode || !v.hasMarking || v.missingFields.length > 0 || v.duplicateCount > 0;
+  const hasIssues = !v.hasBarcode || v.missingFields.length > 0 || v.duplicateCount > 0;
 
   return (
     <div className="space-y-3">

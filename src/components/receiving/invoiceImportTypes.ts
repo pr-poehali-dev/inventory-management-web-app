@@ -41,8 +41,8 @@ export const FIELDS: { key: FieldKey; label: string; required?: boolean }[] = [
 // Ключевые слова для автораспознавания
 export const FIELD_HINTS: Record<FieldKey, string[]> = {
   name: ["наименование", "название", "товар", "продукт", "name", "description", "номенклатура", "позиция", "товары (работы", "работы, услуги"],
-  supplierArticle: ["артикул поставщика", "арт поставщика", "supplier art", "артикул пост", "код"],
-  manufacturerArticle: ["артикул изготовителя", "артикул производителя", "manufacturer art", "арт произв", "арт изг", "артикул"],
+  supplierArticle: ["артикул поставщика", "арт поставщика", "supplier art", "артикул пост", "артикул поставщ", "код поставщика"],
+  manufacturerArticle: ["артикул изготовителя", "артикул производителя", "manufacturer art", "арт произв", "арт изг", "артикул изг", "артикул"],
   brand: ["бренд", "производитель", "brand", "manufacturer", "торговая марка", "изготовитель"],
   qty: ["количество", "кол-во", "кол.", "qty", "count", "шт", "единиц"],
   unit: ["единица", "ед.изм", "ед.", "unit", "мера"],
@@ -50,8 +50,8 @@ export const FIELD_HINTS: Record<FieldKey, string[]> = {
   costTotal: ["сумма себестоимости", "сумма закупки", "итого закупка", "total cost", "сумма прихода", "сумма"],
   salePrice: ["цена продажная", "цена продажи", "розничная цена", "sale price", "продажа", "розница"],
   photo: ["фото", "изображение", "image", "photo", "картинка"],
-  oem: ["oem", "oeм", "ое м", "аналог", "cross"],
-  marking: ["маркировка", "datamatrix", "датаматрикс", "кз", "честный знак", "marking"],
+  oem: ["oem", "oeм", "аналог", "cross"],
+  marking: ["маркировка", "datamatrix", "датаматрикс", "честный знак", "кизо", "кмт"],
 };
 
 export interface SupplierTemplate {
