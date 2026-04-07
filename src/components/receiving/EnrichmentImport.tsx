@@ -92,12 +92,45 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
       reader.onload = (e) => {
         try {
           const buf = e.target!.result as ArrayBuffer;
-          console.log("[Enrich] xlsx onload, byteLength:", buf.byteLength);
           const wb = XLSX.read(buf, { type: "array" });
-          console.log("[Enrich] листов:", wb.SheetNames);
           const ws = wb.Sheets[wb.SheetNames[0]];
-          const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-          console.log("[Enrich] xlsx строк:", data.length, "пример:", data[0]);
+
+          // Читаем как массив массивов чтобы найти строку-заголовок
+          const allRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+
+          // Ищем строку с заголовками — содержит хотя бы 1 ключевое слово
+          const headerKeywords = [
+            "наименование", "название", "товар", "артикул", "количество",
+            "кол-во", "цена", "сумма", "бренд", "производитель", "штрихкод",
+            "barcode", "ean", "gtin", "name", "article", "qty", "price", "amount", "код"
+          ];
+
+          let headerRowIdx = 0;
+          for (let i = 0; i < Math.min(allRows.length, 50); i++) {
+            const rowStr = (allRows[i] as unknown[]).map(c => String(c ?? "").toLowerCase()).join(" ");
+            if (headerKeywords.some(kw => rowStr.includes(kw))) {
+              headerRowIdx = i;
+              break;
+            }
+          }
+
+          console.log("[Enrich] строка заголовков найдена на индексе:", headerRowIdx);
+
+          const hdrsRaw = (allRows[headerRowIdx] as unknown[]).map((h, i) => {
+            const str = String(h ?? "").trim();
+            return str || `Столбец_${i + 1}`;
+          });
+
+          const data: Record<string, unknown>[] = [];
+          for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+            const rawRow = allRows[i] as unknown[];
+            if (!rawRow.some(c => String(c ?? "").trim() !== "")) continue;
+            const obj: Record<string, unknown> = {};
+            hdrsRaw.forEach((h, j) => { obj[h] = rawRow[j] ?? ""; });
+            data.push(obj);
+          }
+
+          console.log("[Enrich] xlsx строк данных:", data.length, "заголовки:", hdrsRaw);
           processRaw(data);
         } catch (err) {
           console.error("[Enrich] ошибка xlsx:", err);
