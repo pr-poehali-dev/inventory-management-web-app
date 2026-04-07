@@ -19,6 +19,33 @@ interface EnrichmentImportProps {
   onClose: () => void;
 }
 
+// Ключевые слова для поиска строки-заголовка
+const HEADER_KEYWORDS = [
+  "наименование", "номенклатура", "название", "товар", "артикул",
+  "количество", "кол-во", "цена", "сумма", "бренд", "производитель",
+  "штрихкод", "barcode", "ean", "gtin", "name", "article",
+  "qty", "price", "amount", "код",
+];
+
+function findHeaderRow(allRows: unknown[][]): number {
+  let bestIdx = 0;
+  let bestScore = 0;
+  for (let i = 0; i < Math.min(allRows.length, 50); i++) {
+    const cells = allRows[i].map(c => String(c ?? "").trim());
+    const nonEmpty = cells.filter(c => c.length > 0);
+    if (nonEmpty.length === 0) continue;
+    // Строка-заголовок: ячейки короткие (не длиннее 50 символов)
+    if (!nonEmpty.every(c => c.length <= 50)) continue;
+    const rowStr = cells.map(c => c.toLowerCase()).join(" ");
+    const score = HEADER_KEYWORDS.filter(kw => rowStr.includes(kw)).length;
+    if (score >= 2 && score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 export default function EnrichmentImport({ rows, onEnriched, onClose }: EnrichmentImportProps) {
   const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
   const [loading, setLoading] = useState(false);
@@ -33,137 +60,101 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
 
   // ── Обработка распарсенных данных ─────────────────────────────────────
   function processRaw(data: Record<string, unknown>[]) {
-    console.log("[Enrich] processRaw, строк:", data.length);
-
-    if (!data.length) {
-      console.warn("[Enrich] данных нет");
-      setLoading(false);
-      return;
-    }
+    if (!data.length) { setLoading(false); return; }
 
     const allHdrs = Object.keys(data[0]);
-    console.log("[Enrich] заголовки до фильтра:", allHdrs);
+    const hdrs = allHdrs.filter((h) => h.trim() && !h.startsWith("__EMPTY") && !h.startsWith("Столбец_"));
 
-    const hdrs = allHdrs.filter((h) => h.trim() && !h.startsWith("__EMPTY"));
-    console.log("[Enrich] заголовки после фильтра:", hdrs);
+    // Если после фильтра ничего не осталось — берём всё как есть (заголовки уже нормальные)
+    const finalHdrs = hdrs.length > 0 ? hdrs : allHdrs.filter(h => h.trim());
 
-    if (!hdrs.length) {
-      console.warn("[Enrich] нет заголовков после фильтра");
-      setLoading(false);
-      return;
-    }
+    if (!finalHdrs.length) { setLoading(false); return; }
 
     const filteredData = data.map((row) => {
       const obj: Record<string, unknown> = {};
-      hdrs.forEach((h) => { obj[h] = row[h]; });
+      finalHdrs.forEach((h) => { obj[h] = row[h]; });
       return obj;
     });
 
     const allHints = { ...ENRICH_HINTS, ...MATCH_HINTS };
-    const detected = autoDetect(hdrs, allHints);
-    console.log("[Enrich] автодетект:", detected);
+    const detected = autoDetect(finalHdrs, allHints);
 
-    const matchEntry = hdrs.find((h) => {
+    const matchEntry = finalHdrs.find((h) => {
       const v = detected[h];
       return v === "name" || v === "supplierArticle" || v === "manufacturerArticle";
     });
-    console.log("[Enrich] matchEntry:", matchEntry, "-> переход на mapping");
 
-    setHeaders(hdrs);
+    setHeaders(finalHdrs);
     setRawRows(filteredData);
     setColMapping(detected);
-    setMatchCol(matchEntry ?? hdrs[0] ?? "");
+    setMatchCol(matchEntry ?? finalHdrs[0] ?? "");
     setMatchField(matchEntry ? ((detected[matchEntry] as MatchKey) ?? "name") : "name");
     setLoading(false);
     setStep("mapping");
   }
 
-  // ── Парсинг файла ─────────────────────────────────────────────────────
+  // ── Парсинг XLSX/XLS ──────────────────────────────────────────────────
+  function parseXlsx(buf: ArrayBuffer) {
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const allRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
+
+    const headerRowIdx = findHeaderRow(allRows);
+
+    const hdrsRaw = allRows[headerRowIdx].map((h, i) => {
+      const str = String(h ?? "").trim();
+      return str || `Столбец_${i + 1}`;
+    });
+
+    const data: Record<string, unknown>[] = [];
+    for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+      const rawRow = allRows[i];
+      if (!rawRow.some(c => String(c ?? "").trim() !== "")) continue;
+      const obj: Record<string, unknown> = {};
+      hdrsRaw.forEach((h, j) => { obj[h] = rawRow[j] ?? ""; });
+      data.push(obj);
+    }
+
+    processRaw(data);
+  }
+
+  // ── Парсинг текстовых форматов (CSV/TSV) ─────────────────────────────
+  function parseCsv(text: string) {
+    const lines = text.trim().split("\n").filter(Boolean);
+    if (lines.length < 2) { setLoading(false); return; }
+    const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+    const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
+    const data = lines.slice(1).map((line) => {
+      const vals = line.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
+      const obj: Record<string, unknown> = {};
+      hdrs.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
+      return obj;
+    });
+    processRaw(data);
+  }
+
+  // ── Обработка выбранного файла ────────────────────────────────────────
   function handleFile(file: File) {
-    console.log("[Enrich] handleFile:", file.name, file.size, "bytes");
     setLoading(true);
     setLoadingFile(file.name);
 
     const ext = file.name.split(".").pop()?.toLowerCase();
-    console.log("[Enrich] ext:", ext);
 
     if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
       reader.onload = (e) => {
-        try {
-          const buf = e.target!.result as ArrayBuffer;
-          const wb = XLSX.read(buf, { type: "array" });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-
-          // Читаем как массив массивов чтобы найти строку-заголовок
-          const allRows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
-
-          // Ищем строку с заголовками — содержит хотя бы 1 ключевое слово
-          const headerKeywords = [
-            "наименование", "название", "товар", "артикул", "количество",
-            "кол-во", "цена", "сумма", "бренд", "производитель", "штрихкод",
-            "barcode", "ean", "gtin", "name", "article", "qty", "price", "amount", "код"
-          ];
-
-          let headerRowIdx = 0;
-          for (let i = 0; i < Math.min(allRows.length, 50); i++) {
-            const rowStr = (allRows[i] as unknown[]).map(c => String(c ?? "").toLowerCase()).join(" ");
-            if (headerKeywords.some(kw => rowStr.includes(kw))) {
-              headerRowIdx = i;
-              break;
-            }
-          }
-
-          console.log("[Enrich] строка заголовков найдена на индексе:", headerRowIdx);
-
-          const hdrsRaw = (allRows[headerRowIdx] as unknown[]).map((h, i) => {
-            const str = String(h ?? "").trim();
-            return str || `Столбец_${i + 1}`;
-          });
-
-          const data: Record<string, unknown>[] = [];
-          for (let i = headerRowIdx + 1; i < allRows.length; i++) {
-            const rawRow = allRows[i] as unknown[];
-            if (!rawRow.some(c => String(c ?? "").trim() !== "")) continue;
-            const obj: Record<string, unknown> = {};
-            hdrsRaw.forEach((h, j) => { obj[h] = rawRow[j] ?? ""; });
-            data.push(obj);
-          }
-
-          console.log("[Enrich] xlsx строк данных:", data.length, "заголовки:", hdrsRaw);
-          processRaw(data);
-        } catch (err) {
-          console.error("[Enrich] ошибка xlsx:", err);
-          setLoading(false);
-        }
+        try { parseXlsx(e.target!.result as ArrayBuffer); }
+        catch { setLoading(false); }
       };
-      reader.onerror = (err) => { console.error("[Enrich] reader error:", err); setLoading(false); };
+      reader.onerror = () => setLoading(false);
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
-        try {
-          const text = e.target!.result as string;
-          console.log("[Enrich] текст прочитан, длина:", text.length, "начало:", text.slice(0, 100));
-          const lines = text.trim().split("\n").filter(Boolean);
-          console.log("[Enrich] строк:", lines.length);
-          if (lines.length < 2) { console.warn("[Enrich] меньше 2 строк"); setLoading(false); return; }
-          const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
-          console.log("[Enrich] разделитель:", JSON.stringify(sep));
-          const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
-          const data = lines.slice(1).map((line) => {
-            const vals = line.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
-            const obj: Record<string, unknown> = {};
-            hdrs.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
-            return obj;
-          });
-          processRaw(data);
-        } catch (err) {
-          console.error("[Enrich] ошибка текста:", err);
-          setLoading(false);
-        }
+        try { parseCsv(e.target!.result as string); }
+        catch { setLoading(false); }
       };
-      reader.onerror = (err) => { console.error("[Enrich] reader error:", err); setLoading(false); };
+      reader.onerror = () => setLoading(false);
       reader.readAsText(file, "utf-8");
     }
   }
@@ -229,7 +220,7 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           </div>
         </div>
 
-        {/* Загрузка файла */}
+        {/* Индикатор загрузки */}
         {loading && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10">
             <div
@@ -243,12 +234,10 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           </div>
         )}
 
-        {/* Шаг 1: Загрузка */}
         {!loading && step === "upload" && (
           <EnrichmentStepUpload onFile={handleFile} />
         )}
 
-        {/* Шаг 2: Маппинг */}
         {!loading && step === "mapping" && (
           <EnrichmentStepMapping
             headers={headers}
@@ -266,7 +255,6 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           />
         )}
 
-        {/* Шаг 3: Предпросмотр */}
         {!loading && step === "preview" && (
           <EnrichmentStepPreview
             enrichedRows={enrichedRows}
