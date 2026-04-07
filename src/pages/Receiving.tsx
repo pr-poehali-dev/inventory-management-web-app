@@ -131,9 +131,7 @@ export default function Receiving() {
   useEffect(() => {
     const q = docSearch.trim();
     if (!q || filteredDocs.length !== 1) return;
-    if (filteredDocs[0].id !== selectedDocId) {
-      setSelectedDocId(filteredDocs[0].id);
-    }
+    setSelectedDocId(filteredDocs[0].id);
   }, [filteredDocs, docSearch]);
 
   /* Фильтрация позиций в выбранном документе */

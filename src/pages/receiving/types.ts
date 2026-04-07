@@ -35,16 +35,18 @@ export const DOCS: ReceivingDoc[] = [
     id: "ПРД-0143", supplier: "ИП Электромонтаж", date: "29.03.2026",
     status: "pending", doc: "НКЛ-0011",
     items: [
-      { id: 6, name: "Кабель ВВГ 3х2.5", barcodes: ["4600000012345"], art: "VVG-3x2.5-100", unit: "м", expected: 200, received: 0 },
-      { id: 7, name: "Патч-корд 1м Cat6", barcodes: ["4607086360148"], art: "PC-1M-BLU", unit: "шт", expected: 50, received: 0 },
-      { id: 8, name: "Труба гофр. 16мм", barcodes: ["4607086360155"], art: "PIPE-16-50", unit: "м", expected: 100, received: 0 },
+      { id: 6, name: "Лампа 12V H7 55W PX26d Palladium MTF", barcodes: ["4623721568787", "9990010732131", "9990016724277"], art: "HPA1207", unit: "шт", expected: 10, received: 0 },
+      { id: 7, name: "Ремень генератора 6PK2013", barcodes: ["FA2099095", "PRD60039866", "9900009552429"], art: "6PK2013", unit: "шт", expected: 4, received: 0 },
+      { id: 8, name: "Термостат Subaru", barcodes: ["21200AA210", "9900008119821"], art: "21200AA210", unit: "шт", expected: 2, received: 2 },
+      { id: 9, name: "Фильтр масляный ARIRANG ARG32-2235", barcodes: ["2009998213384", "2009998213391"], art: "ARG32-2235", unit: "шт", expected: 6, received: 3 },
     ],
   },
   {
     id: "ПРД-0142", supplier: "АО ЭлектроСнаб", date: "28.03.2026",
     status: "done", doc: "НКЛ-0010",
     items: [
-      { id: 9, name: "Дюбель-гвоздь 6×60", barcodes: ["4607086360162"], art: "DG-660-200", unit: "уп", expected: 10, received: 10 },
+      { id: 10, name: "Дюбель-гвоздь 6×60", barcodes: ["4607086360162"], art: "DG-660-200", unit: "уп", expected: 10, received: 10 },
+      { id: 11, name: "Патч-корд 1м Cat6", barcodes: ["4607086360148"], art: "PC-1M-BLU", unit: "шт", expected: 50, received: 50 },
     ],
   },
 ];
