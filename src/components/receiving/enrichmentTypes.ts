@@ -20,8 +20,8 @@ export const ENRICH_FIELDS: { key: EnrichKey; label: string; icon: string }[] = 
 
 export const ENRICH_HINTS: Record<EnrichKey, string[]> = {
   name:                ["наименование", "номенклатура", "название", "товар", "name", "description"],
-  supplierArticle:      ["артикул поставщика", "арт пост", "supplier art", "article"],
-  manufacturerArticle: ["артикул изготовителя", "арт произв", "manufacturer", "арт изг"],
+  supplierArticle:      ["артикул поставщика", "арт пост", "supplier art", "код поставщика"],
+  manufacturerArticle: ["артикул изготовителя", "арт произв", "manufacturer", "арт изг", "артикул", "article"],
   brand:               ["бренд", "производитель", "brand"],
   oem:                 ["oem", "аналог", "cross"],
   photo:               ["фото", "image", "photo", "картинка", "url"],
@@ -31,8 +31,8 @@ export const ENRICH_HINTS: Record<EnrichKey, string[]> = {
 
 export const MATCH_HINTS: Record<MatchKey, string[]> = {
   name:                ["наименование", "название", "товар", "name", "номенклатура"],
-  supplierArticle:     ["артикул поставщика", "арт пост", "supplier art", "article"],
-  manufacturerArticle: ["артикул изготовителя", "арт произв", "manufacturer"],
+  supplierArticle:     ["артикул поставщика", "арт пост", "supplier art", "код поставщика"],
+  manufacturerArticle: ["артикул изготовителя", "арт произв", "manufacturer", "артикул", "article"],
 };
 
 // ─── Чистые функции ────────────────────────────────────────────────────────
@@ -46,14 +46,27 @@ export function autoDetect(
   for (const header of headers) {
     const hl = header.toLowerCase().trim();
     let matched: string | null = null;
+    let bestScore = 0;
+
     for (const [key, kws] of Object.entries(hints)) {
       if (used.has(key)) continue;
-      if (kws.some((kw) => hl.includes(kw) || kw.includes(hl))) {
-        matched = key;
-        used.add(key);
-        break;
+      for (const kw of kws) {
+        if (hl === kw) {
+          // Точное совпадение — наивысший приоритет
+          if (100 > bestScore) { bestScore = 100; matched = key; }
+        } else if (hl.includes(kw)) {
+          // Заголовок содержит хинт — приоритет по длине хинта
+          const score = 50 + kw.length;
+          if (score > bestScore) { bestScore = score; matched = key; }
+        } else if (kw.includes(hl) && hl.length >= 4) {
+          // Хинт содержит заголовок — только если заголовок достаточно длинный
+          const score = hl.length;
+          if (score > bestScore) { bestScore = score; matched = key; }
+        }
       }
     }
+
+    if (matched) used.add(matched);
     mapping[header] = matched;
   }
   return mapping;
