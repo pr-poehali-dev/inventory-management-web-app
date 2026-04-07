@@ -36,21 +36,23 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
     if (!data.length) return;
     const allHdrs = Object.keys(data[0]);
 
-    // Фильтруем пустые/__EMPTY столбцы и столбцы без данных
+    // Убираем только технические __EMPTY заголовки от XLSX
     const hdrs = allHdrs.filter((h) => {
       const name = h.trim();
-      if (!name || name.startsWith("__EMPTY")) return false;
-      // Проверяем, есть ли хоть одно непустое значение в этом столбце
-      return data.some((row) => {
-        const v = row[h];
-        return v !== undefined && v !== null && String(v).trim() !== "";
-      });
+      return name && !name.startsWith("__EMPTY");
     });
 
     if (!hdrs.length) return;
 
+    // Оставляем только нужные столбцы в данных
+    const filteredData = data.map((row) => {
+      const obj: Record<string, unknown> = {};
+      hdrs.forEach((h) => { obj[h] = row[h]; });
+      return obj;
+    });
+
     setHeaders(hdrs);
-    setRawRows(data);
+    setRawRows(filteredData);
 
     const allHints = { ...ENRICH_HINTS, ...MATCH_HINTS };
     const detected = autoDetect(hdrs, allHints);

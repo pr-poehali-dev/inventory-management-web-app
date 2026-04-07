@@ -44,7 +44,7 @@ export function EnrichmentStepUpload({ onFile }: EnrichmentStepUploadProps) {
           type="file"
           accept=".xlsx,.xls,.csv,.tsv,.txt"
           className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) onFile(e.target.files[0]); }}
+          onChange={(e) => { if (e.target.files?.[0]) { onFile(e.target.files[0]); e.target.value = ""; } }}
         />
       </div>
 
