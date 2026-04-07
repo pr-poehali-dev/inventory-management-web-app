@@ -79,16 +79,24 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
     const allHints = { ...ENRICH_HINTS, ...MATCH_HINTS };
     const detected = autoDetect(finalHdrs, allHints);
 
-    const matchEntry = finalHdrs.find((h) => {
-      const v = detected[h];
-      return v === "name" || v === "supplierArticle" || v === "manufacturerArticle";
-    });
+    // Приоритет сопоставления: артикул изготовителя → артикул поставщика → наименование
+    const MATCH_PRIORITY: MatchKey[] = ["manufacturerArticle", "supplierArticle", "name"];
+    let matchEntry: string | undefined;
+    let matchFieldValue: MatchKey = "name";
+    for (const priority of MATCH_PRIORITY) {
+      const found = finalHdrs.find((h) => detected[h] === priority);
+      if (found) {
+        matchEntry = found;
+        matchFieldValue = priority;
+        break;
+      }
+    }
 
     setHeaders(finalHdrs);
     setRawRows(filteredData);
     setColMapping(detected);
     setMatchCol(matchEntry ?? finalHdrs[0] ?? "");
-    setMatchField(matchEntry ? ((detected[matchEntry] as MatchKey) ?? "name") : "name");
+    setMatchField(matchFieldValue);
     setLoading(false);
     setStep("mapping");
   }
