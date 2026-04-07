@@ -10,6 +10,25 @@ export function EnrichmentStepUpload({ onFile }: EnrichmentStepUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  function handleZoneClick() {
+    fileRef.current?.click();
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) onFile(file);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      onFile(file);
+      e.target.value = "";
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">
       <div
@@ -20,16 +39,12 @@ export function EnrichmentStepUpload({ onFile }: EnrichmentStepUploadProps) {
         Система сопоставит строки по наименованию или артикулу и добавит недостающие поля.
       </div>
 
+      {/* Зона загрузки */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          const file = e.dataTransfer.files[0];
-          if (file) onFile(file);
-        }}
-        onClick={() => fileRef.current?.click()}
+        onDrop={handleDrop}
+        onClick={handleZoneClick}
         className="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all"
         style={{
           borderColor: dragOver ? "hsl(var(--primary))" : "hsl(var(--border))",
@@ -39,14 +54,16 @@ export function EnrichmentStepUpload({ onFile }: EnrichmentStepUploadProps) {
         <Icon name="FilePlus2" size={32} className="mx-auto mb-3 text-muted-foreground" />
         <div className="text-sm font-medium text-foreground">Перетащите или выберите файл обогащения</div>
         <div className="text-xs text-muted-foreground mt-1">Excel (.xlsx) · CSV · TSV</div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".xlsx,.xls,.csv,.tsv,.txt"
-          className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) { onFile(e.target.files[0]); e.target.value = ""; } }}
-        />
       </div>
+
+      {/* Input вне зоны клика — не вызывает всплытие */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".xlsx,.xls,.csv,.tsv,.txt"
+        className="hidden"
+        onChange={handleChange}
+      />
 
       <div>
         <div className="text-xs font-medium text-muted-foreground mb-2">Что можно добавить из файла:</div>

@@ -33,15 +33,22 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
 
   // ── Обработка распарсенных данных ─────────────────────────────────────
   function processRaw(data: Record<string, unknown>[]) {
+    console.log("[Enrich] processRaw, строк:", data.length);
+
     if (!data.length) {
+      console.warn("[Enrich] данных нет");
       setLoading(false);
       return;
     }
 
     const allHdrs = Object.keys(data[0]);
+    console.log("[Enrich] заголовки до фильтра:", allHdrs);
+
     const hdrs = allHdrs.filter((h) => h.trim() && !h.startsWith("__EMPTY"));
+    console.log("[Enrich] заголовки после фильтра:", hdrs);
 
     if (!hdrs.length) {
+      console.warn("[Enrich] нет заголовков после фильтра");
       setLoading(false);
       return;
     }
@@ -54,11 +61,13 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
 
     const allHints = { ...ENRICH_HINTS, ...MATCH_HINTS };
     const detected = autoDetect(hdrs, allHints);
+    console.log("[Enrich] автодетект:", detected);
 
     const matchEntry = hdrs.find((h) => {
       const v = detected[h];
       return v === "name" || v === "supplierArticle" || v === "manufacturerArticle";
     });
+    console.log("[Enrich] matchEntry:", matchEntry, "-> переход на mapping");
 
     setHeaders(hdrs);
     setRawRows(filteredData);
@@ -71,33 +80,43 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
 
   // ── Парсинг файла ─────────────────────────────────────────────────────
   function handleFile(file: File) {
+    console.log("[Enrich] handleFile:", file.name, file.size, "bytes");
     setLoading(true);
     setLoadingFile(file.name);
 
     const ext = file.name.split(".").pop()?.toLowerCase();
+    console.log("[Enrich] ext:", ext);
 
     if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
+          const buf = e.target!.result as ArrayBuffer;
+          console.log("[Enrich] xlsx onload, byteLength:", buf.byteLength);
+          const wb = XLSX.read(buf, { type: "array" });
+          console.log("[Enrich] листов:", wb.SheetNames);
           const ws = wb.Sheets[wb.SheetNames[0]];
           const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+          console.log("[Enrich] xlsx строк:", data.length, "пример:", data[0]);
           processRaw(data);
-        } catch {
+        } catch (err) {
+          console.error("[Enrich] ошибка xlsx:", err);
           setLoading(false);
         }
       };
-      reader.onerror = () => setLoading(false);
+      reader.onerror = (err) => { console.error("[Enrich] reader error:", err); setLoading(false); };
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const text = e.target!.result as string;
+          console.log("[Enrich] текст прочитан, длина:", text.length, "начало:", text.slice(0, 100));
           const lines = text.trim().split("\n").filter(Boolean);
-          if (lines.length < 2) { setLoading(false); return; }
+          console.log("[Enrich] строк:", lines.length);
+          if (lines.length < 2) { console.warn("[Enrich] меньше 2 строк"); setLoading(false); return; }
           const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+          console.log("[Enrich] разделитель:", JSON.stringify(sep));
           const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
           const data = lines.slice(1).map((line) => {
             const vals = line.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
@@ -106,11 +125,12 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
             return obj;
           });
           processRaw(data);
-        } catch {
+        } catch (err) {
+          console.error("[Enrich] ошибка текста:", err);
           setLoading(false);
         }
       };
-      reader.onerror = () => setLoading(false);
+      reader.onerror = (err) => { console.error("[Enrich] reader error:", err); setLoading(false); };
       reader.readAsText(file, "utf-8");
     }
   }
