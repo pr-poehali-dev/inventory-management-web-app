@@ -92,7 +92,7 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
   const applyTemplate = useCallback(
     (hdrs: string[], rows2: Record<string, unknown>[]) => {
       const [normHdrs, normRows] = normalizeHeaders(hdrs, rows2);
-      const tpl = templates.find((t) => t.supplier === supplierName);
+      const tpl = templates.find((t) => t.supplier.toLowerCase().trim() === supplierName.toLowerCase().trim());
       const detected = tpl ? tpl.mapping : autoDetectMapping(normHdrs);
       setHeaders(normHdrs);
       setRawRows(normRows);
