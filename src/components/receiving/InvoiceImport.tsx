@@ -97,7 +97,25 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
       setHeaders(normHdrs);
       setRawRows(normRows);
       setMapping(detected as Record<string, FieldKey | null>);
-      setStep("mapping");
+
+      if (tpl) {
+        // Шаблон найден — пропускаем маппинг, сразу парсим и идём на preview
+        const parsed = applyValidation(parseRows(normRows, detected as Record<string, FieldKey | null>));
+        setRows(parsed);
+        const cwq = parsed.map((r, i) => r._costWarning ? i : -1).filter(i => i >= 0);
+        const caq = parsed.map((r, i) => r._candleAlert ? i : -1).filter(i => i >= 0);
+        if (cwq.length) {
+          setWarningQueue(cwq.slice(1));
+          setCostWarningRow({ idx: cwq[0], row: parsed[cwq[0]] });
+        } else if (caq.length) {
+          setCandleQueue(caq.slice(1));
+          setCandleRow({ idx: caq[0], row: parsed[caq[0]] });
+        } else {
+          setStep("preview");
+        }
+      } else {
+        setStep("mapping");
+      }
     },
     [templates, supplierName, normalizeHeaders]
   );
