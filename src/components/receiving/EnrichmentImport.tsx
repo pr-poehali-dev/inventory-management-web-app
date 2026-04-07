@@ -23,6 +23,8 @@ interface EnrichmentImportProps {
 
 export default function EnrichmentImport({ rows, onEnriched, onClose }: EnrichmentImportProps) {
   const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
+  const [loading, setLoading] = useState(false);
+  const [loadingFile, setLoadingFile] = useState("");
   const [rawRows, setRawRows] = useState<Record<string, unknown>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [colMapping, setColMapping] = useState<Record<string, string | null>>({});
@@ -74,6 +76,8 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
 
   // ── Парсинг файла ─────────────────────────────────────────────────────
   const handleFile = useCallback((file: File) => {
+    setLoading(true);
+    setLoadingFile(file.name);
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
@@ -81,15 +85,17 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
         const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+        setLoading(false);
         processRaw(data);
       };
+      reader.onerror = () => setLoading(false);
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target!.result as string;
         const lines = text.trim().split("\n").filter(Boolean);
-        if (lines.length < 2) return;
+        if (lines.length < 2) { setLoading(false); return; }
         const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
         const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
         const data = lines.slice(1).map((line) => {
@@ -98,8 +104,10 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           hdrs.forEach((h, i) => (obj[h] = vals[i] ?? ""));
           return obj;
         });
+        setLoading(false);
         processRaw(data);
       };
+      reader.onerror = () => setLoading(false);
       reader.readAsText(file, "utf-8");
     }
   }, [processRaw]);
@@ -166,8 +174,21 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
         </div>
 
         {/* Шаги */}
-        {step === "upload" && (
+        {step === "upload" && !loading && (
           <EnrichmentStepUpload onFile={handleFile} />
+        )}
+
+        {loading && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10">
+            <div
+              className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
+              style={{ borderColor: "hsl(var(--border))", borderTopColor: "hsl(var(--primary))" }}
+            />
+            <div className="text-center">
+              <div className="text-sm font-medium text-foreground">Читаю файл...</div>
+              <div className="text-xs text-muted-foreground mt-1 max-w-[260px] truncate">{loadingFile}</div>
+            </div>
+          </div>
         )}
 
         {step === "mapping" && (
