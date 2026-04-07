@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import * as XLSX from "xlsx";
 import Icon from "@/components/ui/icon";
 import { InvoiceRow } from "./invoiceImportTypes";
@@ -12,8 +12,6 @@ import {
 import { EnrichmentStepUpload } from "./EnrichmentStepUpload";
 import { EnrichmentStepMapping } from "./EnrichmentStepMapping";
 import { EnrichmentStepPreview } from "./EnrichmentStepPreview";
-
-// ─── Основной компонент-оркестратор ────────────────────────────────────────
 
 interface EnrichmentImportProps {
   rows: InvoiceRow[];
@@ -33,96 +31,101 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
   const [enrichedRows, setEnrichedRows] = useState<InvoiceRow[]>([]);
   const [matchStats, setMatchStats] = useState<{ matched: number; total: number } | null>(null);
 
-  // ── Обработка загруженных данных ──────────────────────────────────────
-  const processRaw = useCallback((data: Record<string, unknown>[]) => {
-    if (!data.length) return;
+  // ── Обработка распарсенных данных ─────────────────────────────────────
+  function processRaw(data: Record<string, unknown>[]) {
+    if (!data.length) {
+      setLoading(false);
+      return;
+    }
+
     const allHdrs = Object.keys(data[0]);
+    const hdrs = allHdrs.filter((h) => h.trim() && !h.startsWith("__EMPTY"));
 
-    // Убираем только технические __EMPTY заголовки от XLSX
-    const hdrs = allHdrs.filter((h) => {
-      const name = h.trim();
-      return name && !name.startsWith("__EMPTY");
-    });
+    if (!hdrs.length) {
+      setLoading(false);
+      return;
+    }
 
-    if (!hdrs.length) return;
-
-    // Оставляем только нужные столбцы в данных
     const filteredData = data.map((row) => {
       const obj: Record<string, unknown> = {};
       hdrs.forEach((h) => { obj[h] = row[h]; });
       return obj;
     });
 
-    setHeaders(hdrs);
-    setRawRows(filteredData);
-
     const allHints = { ...ENRICH_HINTS, ...MATCH_HINTS };
     const detected = autoDetect(hdrs, allHints);
-    setColMapping(detected);
 
     const matchEntry = hdrs.find((h) => {
       const v = detected[h];
       return v === "name" || v === "supplierArticle" || v === "manufacturerArticle";
     });
-    if (matchEntry) {
-      setMatchCol(matchEntry);
-      setMatchField((detected[matchEntry] as MatchKey) ?? "name");
-    } else {
-      setMatchCol(hdrs[0] ?? "");
-    }
 
+    setHeaders(hdrs);
+    setRawRows(filteredData);
+    setColMapping(detected);
+    setMatchCol(matchEntry ?? hdrs[0] ?? "");
+    setMatchField(matchEntry ? ((detected[matchEntry] as MatchKey) ?? "name") : "name");
+    setLoading(false);
     setStep("mapping");
-  }, []);
+  }
 
   // ── Парсинг файла ─────────────────────────────────────────────────────
-  const handleFile = useCallback((file: File) => {
+  function handleFile(file: File) {
     setLoading(true);
     setLoadingFile(file.name);
+
     const ext = file.name.split(".").pop()?.toLowerCase();
+
     if (ext === "xlsx" || ext === "xls") {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-        setLoading(false);
-        processRaw(data);
+        try {
+          const wb = XLSX.read(e.target!.result as ArrayBuffer, { type: "array" });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+          processRaw(data);
+        } catch {
+          setLoading(false);
+        }
       };
       reader.onerror = () => setLoading(false);
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const text = e.target!.result as string;
-        const lines = text.trim().split("\n").filter(Boolean);
-        if (lines.length < 2) { setLoading(false); return; }
-        const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
-        const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
-        const data = lines.slice(1).map((line) => {
-          const vals = line.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
-          const obj: Record<string, unknown> = {};
-          hdrs.forEach((h, i) => (obj[h] = vals[i] ?? ""));
-          return obj;
-        });
-        setLoading(false);
-        processRaw(data);
+        try {
+          const text = e.target!.result as string;
+          const lines = text.trim().split("\n").filter(Boolean);
+          if (lines.length < 2) { setLoading(false); return; }
+          const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+          const hdrs = lines[0].split(sep).map((h) => h.trim().replace(/^"|"$/g, ""));
+          const data = lines.slice(1).map((line) => {
+            const vals = line.split(sep).map((v) => v.trim().replace(/^"|"$/g, ""));
+            const obj: Record<string, unknown> = {};
+            hdrs.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
+            return obj;
+          });
+          processRaw(data);
+        } catch {
+          setLoading(false);
+        }
       };
       reader.onerror = () => setLoading(false);
       reader.readAsText(file, "utf-8");
     }
-  }, [processRaw]);
+  }
 
   // ── Применение обогащения ─────────────────────────────────────────────
-  const handleApply = () => {
+  function handleApply() {
     const result = applyEnrichment(rows, rawRows, matchCol, matchField, colMapping);
     setMatchStats({ matched: result.matched, total: result.total });
     setEnrichedRows(result.enrichedRows);
     setStep("preview");
-  };
+  }
 
-  // ── Индикатор шагов ────────────────────────────────────────────────────
   const STEPS = ["upload", "mapping", "preview"] as const;
   const STEP_LABELS = ["Файл", "Столбцы", "Результат"];
+  const currentStepIndex = STEPS.indexOf(step);
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
@@ -149,16 +152,16 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
                       background:
                         step === s
                           ? "hsl(var(--primary))"
-                          : STEPS.indexOf(step) > i
+                          : currentStepIndex > i
                           ? "hsl(var(--wms-green))"
                           : "hsl(var(--muted))",
                       color:
-                        step === s || STEPS.indexOf(step) > i
+                        step === s || currentStepIndex > i
                           ? "#fff"
                           : "hsl(var(--muted-foreground))",
                     }}
                   >
-                    {STEPS.indexOf(step) > i ? "✓" : i + 1}
+                    {currentStepIndex > i ? "✓" : i + 1}
                   </div>
                   <span style={{ color: step === s ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}>
                     {STEP_LABELS[i]}
@@ -173,15 +176,11 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           </div>
         </div>
 
-        {/* Шаги */}
-        {step === "upload" && !loading && (
-          <EnrichmentStepUpload onFile={handleFile} />
-        )}
-
+        {/* Загрузка файла */}
         {loading && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-10">
             <div
-              className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
+              className="w-12 h-12 rounded-full border-4 animate-spin"
               style={{ borderColor: "hsl(var(--border))", borderTopColor: "hsl(var(--primary))" }}
             />
             <div className="text-center">
@@ -191,7 +190,13 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           </div>
         )}
 
-        {step === "mapping" && (
+        {/* Шаг 1: Загрузка */}
+        {!loading && step === "upload" && (
+          <EnrichmentStepUpload onFile={handleFile} />
+        )}
+
+        {/* Шаг 2: Маппинг */}
+        {!loading && step === "mapping" && (
           <EnrichmentStepMapping
             headers={headers}
             rawRows={rawRows}
@@ -208,7 +213,8 @@ export default function EnrichmentImport({ rows, onEnriched, onClose }: Enrichme
           />
         )}
 
-        {step === "preview" && (
+        {/* Шаг 3: Предпросмотр */}
+        {!loading && step === "preview" && (
           <EnrichmentStepPreview
             enrichedRows={enrichedRows}
             originalRows={rows}
