@@ -303,12 +303,16 @@ export default function InvoiceImport({ supplierName = "", onImport, onClose }: 
       const rem = qty % 4;
       updated[candleRow.idx].qty = kits;
       updated[candleRow.idx].unit = "компл.";
+      updated[candleRow.idx].costPrice = updated[candleRow.idx].costPrice * 4;
+      updated[candleRow.idx].salePrice = updated[candleRow.idx].salePrice * 4;
       updated[candleRow.idx]._candleAlert = false;
       if (rem > 0) {
         updated.splice(candleRow.idx + 1, 0, {
           ...updated[candleRow.idx],
           qty: rem,
           unit: "шт",
+          costPrice: updated[candleRow.idx].costPrice / 4,
+          salePrice: updated[candleRow.idx].salePrice / 4,
           _candleAlert: false,
           _candleQty: undefined,
         });
