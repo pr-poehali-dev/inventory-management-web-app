@@ -2,12 +2,13 @@ import { InvoiceRow } from "./invoiceImportTypes";
 
 // ─── Типы ──────────────────────────────────────────────────────────────────
 
-export type EnrichKey = "supplierArticle" | "manufacturerArticle" | "brand" | "oem" | "photo" | "salePrice" | "marking";
+export type EnrichKey = "name" | "supplierArticle" | "manufacturerArticle" | "brand" | "oem" | "photo" | "salePrice" | "marking";
 export type MatchKey = "name" | "supplierArticle" | "manufacturerArticle";
 
 // ─── Константы ─────────────────────────────────────────────────────────────
 
 export const ENRICH_FIELDS: { key: EnrichKey; label: string; icon: string }[] = [
+  { key: "name",                 label: "Наименование товара",  icon: "Package" },
   { key: "supplierArticle",      label: "Артикул поставщика",   icon: "Tag" },
   { key: "manufacturerArticle", label: "Артикул изготовителя", icon: "Tag" },
   { key: "brand",                label: "Бренд",                icon: "Building2" },
@@ -18,6 +19,7 @@ export const ENRICH_FIELDS: { key: EnrichKey; label: string; icon: string }[] = 
 ];
 
 export const ENRICH_HINTS: Record<EnrichKey, string[]> = {
+  name:                ["наименование", "номенклатура", "название", "товар", "name", "description"],
   supplierArticle:      ["артикул поставщика", "арт пост", "supplier art", "article"],
   manufacturerArticle: ["артикул изготовителя", "арт произв", "manufacturer", "арт изг"],
   brand:               ["бренд", "производитель", "brand"],
