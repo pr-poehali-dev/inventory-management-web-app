@@ -288,6 +288,14 @@ export function InvoiceDetail({
                     </td>
                     <td className="text-center">
                       <div className="flex justify-center gap-1.5">
+                        {row.barcodes?.length > 0 && (
+                          <span
+                            title={`${row.barcodes.length} штрихкодов: ${row.barcodes.slice(0, 3).join(", ")}${row.barcodes.length > 3 ? "…" : ""}`}
+                            style={{ color: "hsl(var(--wms-blue))" }}
+                          >
+                            <Icon name="Barcode" size={13} />
+                          </span>
+                        )}
                         {row.marking?.length > 0 && (
                           <span
                             title={`${row.marking.length} кодов DataMatrix`}
@@ -323,6 +331,12 @@ export function InvoiceDetail({
           >
             <span className="text-muted-foreground">
               Позиций: <span className="text-foreground font-medium">{rows.length}</span>
+              {rows.some((r) => r.barcodes?.length > 0) && (
+                <span className="ml-3" style={{ color: "hsl(var(--wms-blue))" }}>
+                  <Icon name="Barcode" size={12} className="inline mr-1" />
+                  {rows.reduce((s, r) => s + (r.barcodes?.length ?? 0), 0)} штрихкодов
+                </span>
+              )}
               {rows.some((r) => r.marking?.length > 0) && (
                 <span className="ml-3" style={{ color: "hsl(var(--wms-green))" }}>
                   <Icon name="QrCode" size={12} className="inline mr-1" />

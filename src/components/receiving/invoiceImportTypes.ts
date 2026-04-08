@@ -13,6 +13,7 @@ export interface InvoiceRow {
   photo: string;
   oem: string;
   marking: string[];
+  barcodes: string[];
   // служебные
   _costWarning?: boolean;
   _candleAlert?: boolean;
@@ -36,6 +37,7 @@ export const FIELDS: { key: FieldKey; label: string; required?: boolean }[] = [
   { key: "photo", label: "Фото товара" },
   { key: "oem", label: "OEM" },
   { key: "marking", label: "Маркировка (DataMatrix)" },
+  { key: "barcodes", label: "Штрихкоды (EAN/UPC)" },
 ];
 
 // Ключевые слова для автораспознавания
@@ -52,6 +54,7 @@ export const FIELD_HINTS: Record<FieldKey, string[]> = {
   photo: ["фото", "изображение", "image", "photo", "картинка"],
   oem: ["oem", "oeм", "аналог", "cross"],
   marking: ["маркировка", "datamatrix", "датаматрикс", "честный знак", "кизо", "кмт"],
+  barcodes: ["штрихкод", "barcode", "ean", "upc", "штрих-код", "штрих код", "код товара"],
 };
 
 export interface SupplierTemplate {
@@ -132,6 +135,7 @@ export function parseRows(
         photo: "",
         oem: "",
         marking: [],
+        barcodes: [],
       };
 
       for (const [col, fieldKey] of Object.entries(mapping)) {
@@ -141,6 +145,8 @@ export function parseRows(
           (row as Record<FieldKey, unknown>)[fieldKey] = parseFloat(val.replace(/\s/g, "").replace(",", ".")) || 0;
         } else if (fieldKey === "marking") {
           row.marking = val.split(/[;\n,]/).map((s) => s.trim()).filter(Boolean);
+        } else if (fieldKey === "barcodes") {
+          row.barcodes = val.split(/[;\n,]/).map((s) => s.trim()).filter(Boolean);
         } else {
           (row as Record<FieldKey, unknown>)[fieldKey] = val;
         }
@@ -189,6 +195,7 @@ export function mergeDuplicates(rows: InvoiceRow[]): InvoiceRow[] {
         costPrice: Math.max(base.costPrice, row.costPrice),
         salePrice: Math.max(base.salePrice, row.salePrice),
         marking: [...base.marking, ...row.marking.filter((m) => !base.marking.includes(m))],
+        barcodes: [...(base.barcodes ?? []), ...(row.barcodes ?? []).filter((b) => !(base.barcodes ?? []).includes(b))],
         _isDuplicate: false,
       });
     } else {
