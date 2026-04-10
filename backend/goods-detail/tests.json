@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Карточка товара без id",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {"error": "id required"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

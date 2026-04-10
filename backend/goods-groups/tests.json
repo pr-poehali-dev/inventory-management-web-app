@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Дерево групп",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"groups": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

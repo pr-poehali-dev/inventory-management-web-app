@@ -1,3 +1,6 @@
 {
+  "goods-groups": "https://functions.poehali.dev/f953c269-2df9-49f3-b70e-95aab47a8fd5",
+  "goods-list": "https://functions.poehali.dev/c9ea37e6-42e6-4703-9de7-6889f45ff132",
+  "goods-detail": "https://functions.poehali.dev/89ed7505-2cd9-4940-a48d-3088f7edb5e0",
   "warehouse": "https://functions.poehali.dev/fc5c1456-4a2b-4a04-9836-42d09fdcac87"
 }

@@ -15,6 +15,7 @@ import Labels from "@/pages/Labels";
 import WarehouseMap from "@/pages/WarehouseMap";
 import Settings from "@/pages/Settings";
 import Products from "@/pages/Products";
+import ClientShopGoods from "@/pages/ClientShopGoods";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => {
       case "reports": return <Reports />;
       case "sync": return <Sync />;
       case "users": return <Users />;
+      case "clientshop-goods": return <ClientShopGoods />;
       case "settings": return <Settings />;
       default: return <Dashboard />;
     }

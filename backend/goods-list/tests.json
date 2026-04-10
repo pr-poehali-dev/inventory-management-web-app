@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Список товаров",
+      "method": "GET",
+      "path": "/?page=1&limit=10",
+      "expectedStatus": 200,
+      "expectedBody": {"items": [], "total": 0},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
