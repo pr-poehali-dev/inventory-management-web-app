@@ -1,14 +1,14 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { MarkupRule, RoundingRule, TAB_ITEMS, defaultMarkupRules, defaultRoundingRules } from "./settingsTypes";
+import { MarkupRule, RoundingRule, TAB_ITEMS, defaultMarkupRules, defaultRoundingRules, DbConfig, loadDbConfig } from "./settingsTypes";
 import { MarkupTab } from "./MarkupTab";
-
-// ─── Основная страница настроек ─────────────────────────────────────────────
+import { ConnectionTab } from "./ConnectionTab";
 
 export default function Settings() {
-  const [activeTab] = useState("markup");
+  const [activeTab, setActiveTab] = useState("markup");
   const [markupRules, setMarkupRules] = useState<MarkupRule[]>(defaultMarkupRules);
   const [roundingRules, setRoundingRules] = useState<RoundingRule[]>(defaultRoundingRules);
+  const [dbConfig, setDbConfig] = useState<DbConfig>(loadDbConfig);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -18,6 +18,7 @@ export default function Settings() {
         {TAB_ITEMS.map((tab) => (
           <button
             key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
               background: activeTab === tab.id ? "hsl(var(--card))" : "transparent",
@@ -31,7 +32,6 @@ export default function Settings() {
         ))}
       </div>
 
-      {/* Вкладка Наценки */}
       {activeTab === "markup" && (
         <MarkupTab
           markupRules={markupRules}
@@ -39,6 +39,10 @@ export default function Settings() {
           onMarkupUpdate={setMarkupRules}
           onRoundingUpdate={setRoundingRules}
         />
+      )}
+
+      {activeTab === "connection" && (
+        <ConnectionTab config={dbConfig} onChange={setDbConfig} />
       )}
     </div>
   );

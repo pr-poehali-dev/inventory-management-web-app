@@ -21,8 +21,37 @@ export interface RoundingRule {
 export const ROUNDING_OPTIONS = [5, 10, 25, 50, 100];
 
 export const TAB_ITEMS = [
-  { id: "markup", label: "Наценки", icon: "Percent" },
+  { id: "markup",     label: "Наценки",     icon: "Percent"  },
+  { id: "connection", label: "Подключение", icon: "Database" },
 ];
+
+export interface DbConfig {
+  host:     string;
+  database: string;
+  user:     string;
+  password: string;
+  port:     string;
+}
+
+export const defaultDbConfig: DbConfig = {
+  host:     "localhost",
+  database: "",
+  user:     "SYSDBA",
+  password: "masterkey",
+  port:     "8000",
+};
+
+export function loadDbConfig(): DbConfig {
+  try {
+    const raw = localStorage.getItem("wms_db_config");
+    if (raw) return { ...defaultDbConfig, ...JSON.parse(raw) };
+  } catch (_e) { /* ignore */ }
+  return { ...defaultDbConfig };
+}
+
+export function saveDbConfig(cfg: DbConfig): void {
+  localStorage.setItem("wms_db_config", JSON.stringify(cfg));
+}
 
 export const defaultMarkupRules: MarkupRule[] = [
   { id: "1", type: "supplier", name: "ООО Кабельстрой",  markup: 35, rounding: 10, enabled: true  },

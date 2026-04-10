@@ -16,13 +16,33 @@ import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-# ── Настройки подключения к Firebird ──────────────────────────────
-# Можно задать через переменные окружения или прямо здесь:
-FB_HOST     = os.environ.get("FB_HOST",     "localhost")
-FB_DATABASE = os.environ.get("FB_DATABASE", r"C:\ClientShop\TASK2.FDB")
-FB_USER     = os.environ.get("FB_USER",     "SYSDBA")
-FB_PASSWORD = os.environ.get("FB_PASSWORD", "masterkey")
-PORT        = int(os.environ.get("PORT",    8000))
+# ── Настройки: читаем db.config → затем env → затем дефолты ───────
+def _load_config():
+    cfg = {
+        "FB_HOST":     "localhost",
+        "FB_DATABASE": "",
+        "FB_USER":     "SYSDBA",
+        "FB_PASSWORD": "masterkey",
+        "PORT":        "8000",
+    }
+    config_path = os.path.join(os.path.dirname(__file__), "db.config")
+    if os.path.exists(config_path):
+        with open(config_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if "=" in line and not line.startswith("#"):
+                    k, v = line.split("=", 1)
+                    cfg[k.strip()] = v.strip()
+    for k in cfg:
+        cfg[k] = os.environ.get(k, cfg[k])
+    return cfg
+
+_cfg = _load_config()
+FB_HOST     = _cfg["FB_HOST"]
+FB_DATABASE = _cfg["FB_DATABASE"]
+FB_USER     = _cfg["FB_USER"]
+FB_PASSWORD = _cfg["FB_PASSWORD"]
+PORT        = int(_cfg["PORT"])
 
 
 def get_conn():
@@ -242,6 +262,21 @@ def handle_health(_params):
         return 500, {"status": "error", "message": str(e)}
 
 
+def handle_save_config(body_bytes):
+    data = json.loads(body_bytes.decode("utf-8"))
+    lines = [
+        f"FB_HOST={data.get('host', 'localhost')}",
+        f"FB_DATABASE={data.get('database', '')}",
+        f"FB_USER={data.get('user', 'SYSDBA')}",
+        f"FB_PASSWORD={data.get('password', 'masterkey')}",
+        f"PORT={data.get('port', '8000')}",
+    ]
+    config_path = os.path.join(os.path.dirname(__file__), "db.config")
+    with open(config_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    return 200, {"status": "saved"}
+
+
 ROUTES = {
     "/goods":        handle_goods,
     "/goods/detail": handle_goods_detail,
@@ -282,6 +317,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(500, {"error": str(e)})
             return
         self.send_json(status, body)
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/config":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+            try:
+                status, resp_body = handle_save_config(body)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+                return
+            self.send_json(status, resp_body)
+        else:
+            self.send_json(404, {"error": "not found"})
 
 
 if __name__ == "__main__":
