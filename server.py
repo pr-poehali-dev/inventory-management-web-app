@@ -47,13 +47,31 @@ PORT        = int(_cfg["PORT"])
 
 def get_conn():
     import firebirdsql
-    return firebirdsql.connect(
+
+    # Ищем fbclient.dll — пробуем Firebird 3.0, потом 5.0
+    fb_client_candidates = [
+        r"C:\Program Files\Firebird\Firebird_3_0\fbclient.dll",
+        r"C:\Program Files\Firebird\Firebird_5_0\fbclient.dll",
+        r"C:\Program Files (x86)\Firebird\Firebird_3_0\fbclient.dll",
+        r"C:\Program Files (x86)\Firebird\Firebird_2_0\fbclient.dll",
+    ]
+    fb_client = None
+    for path in fb_client_candidates:
+        if os.path.exists(path):
+            fb_client = path
+            break
+
+    kwargs = dict(
         host=FB_HOST,
         database=FB_DATABASE,
         user=FB_USER,
         password=FB_PASSWORD,
         charset="WIN1251",
     )
+    if fb_client:
+        kwargs["fb_library_name"] = fb_client
+
+    return firebirdsql.connect(**kwargs)
 
 
 CORS_HEADERS = {
