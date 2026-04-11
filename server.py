@@ -53,7 +53,6 @@ def get_conn():
         user=FB_USER,
         password=FB_PASSWORD,
         charset="WIN1251",
-        fb_library_name=r"C:\Windows\System32\FBCLIENT.DLL",
     )
 
 
