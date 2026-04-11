@@ -46,8 +46,9 @@ PORT        = int(_cfg["PORT"])
 
 
 def get_conn():
-    import firebirdsql
-    return firebirdsql.connect(
+    import fdb
+    fdb.load_api(r"C:\Windows\System32\FBCLIENT.DLL")
+    return fdb.connect(
         host=FB_HOST,
         database=FB_DATABASE,
         user=FB_USER,

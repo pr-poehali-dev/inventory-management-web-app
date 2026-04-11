@@ -16,10 +16,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
-python -c "import firebirdsql" >nul 2>&1
+python -c "import fdb" >nul 2>&1
 if errorlevel 1 (
-    echo Installing firebirdsql...
-    pip install firebirdsql -q
+    echo Installing fdb...
+    pip install fdb -q
 )
 
 if not exist "node_modules" (
