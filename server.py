@@ -47,13 +47,13 @@ PORT        = int(_cfg["PORT"])
 
 def get_conn():
     import firebirdsql
+    # database строка в формате host/port:path для явного TCP-подключения
+    db_str = f"{FB_HOST}/{3050}:{FB_DATABASE}"
     return firebirdsql.connect(
-        host=FB_HOST,
-        database=FB_DATABASE,
+        dsn=db_str,
         user=FB_USER,
         password=FB_PASSWORD,
         charset="WIN1251",
-        port=3050,
     )
 
 
